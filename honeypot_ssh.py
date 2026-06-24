@@ -13,17 +13,40 @@ class SSHHoneypot(paramiko.ServerInterface):
         return paramiko.AUTH_FAILED
 
 def client_handler(client_socket):
-    transport = paramiko.Transport(client_socket)
-    transport.add_server_key(host_key)
-    transport.local_version = "SSH-2.0-OpenSSH_8.9p1ubuntu1.6"
-
-    server = SSHHoneypot()
-
     try:
+        transport = paramiko.Transport(client_socket)
+        transport.add_server_key(host_key)
+        transport.local_version = "SSH-2.0-OpenSSH_8.9p1ubuntu1.6"
+
+        server = SSHHoneypot()
+
+        # SSH el sıkışmasını başlatır ve banner gönderir
         transport.start_server(server=server)
-        transport.accept(20)
+
+        # Gelen channel isteklerini bekler(maksimum 20 sn)
+        chan = transport.accept(20)
+        if chan is None:
+            print("[-] İstemci kanali basariyla acilamadi veya süre asimina ugradi.")
+            return
+        print("[+] İstemci kanali basariyla acildi!")
+
+        # İstemci baglandiktan sonra baglantiyi acik tutmak veya 
+        # sahte bir terminal simüle etmek icin buraya kod ekleyebiliriz
+        # Örn: chan.send("Welcome to Ubuntu...\r\n")
+        
+        # Test icin biraz acik birakabilirz
+        chan.send("Ubuntu 22.04.1 LTS\r\n")
+        chan.send("Honeypot simulation\r\n\r\n")
+        chan.send("attacker@hostname:~# ")
+        chan.close()
+        
     except Exception as e:
-        print(e)
+        print(f"[-] Hata olustu: {e}")
+    finally:
+        try:
+            transport.close()
+        except:
+            pass
 
 def start_server(port=2222):
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
