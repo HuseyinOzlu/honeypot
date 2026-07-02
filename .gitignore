@@ -1,3 +1,21 @@
+# Log files
 *.log
-*.gitignore
-*.env
+
+# Environment variables / secrets
+.env
+.env.*
+
+# Python Cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# IDE / Editor configurations
+.vscode/
+.idea/
