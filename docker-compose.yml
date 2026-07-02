@@ -1,0 +1,18 @@
+services:
+  honeypot-ssh:
+    build: ./honeypot_ssh
+    container_name: honeypot-ssh
+    ports:
+      - "22:2222"
+    volumes:
+      - ./honeypot_ssh/honeypot.log:/app/honeypot.log
+    restart: always
+
+  honeypot-http:
+    build: ./honeypot_http
+    container_name: honeypot-http
+    ports:
+      - "8080:80"
+    volumes:
+      - ./honeypot_http/web.log:/app/web.log
+    restart: always
