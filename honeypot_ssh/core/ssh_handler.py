@@ -53,36 +53,7 @@ class SSHHandler:
             chan.send(" * Management:     https://landscape.canonical.com\r\n")
             chan.send(" * Support:        https://ubuntu.com/advantage\r\n\r\n")
             
-            chan.send(shell.get_prompt())
-            buffer = ""
-            while True:
-                data = chan.recv(1024)
-                if not data:
-                    break
-                
-                for char in data.decode('utf-8', errors='ignore'):
-                    if char in ('\r', '\n'):
-                        chan.send("\r\n")
-                        cmd = buffer.strip()
-                        try:
-                            shell.execute(cmd)
-                        except EOFError:
-                            chan.send("logout\r\n")
-                            return
-                        
-                        buffer = ""
-                        chan.send(shell.get_prompt())
-                    elif char in ('\x7f', '\x08'):
-                        if len(buffer) > 0:
-                            buffer = buffer[:-1]
-                            chan.send("\b \b")
-                    elif char == '\x03':
-                        chan.send("^C\r\n")
-                        buffer = ""
-                        chan.send(shell.get_prompt())
-                    else:
-                        buffer += char
-                        chan.send(char)
+            shell.run()
         except Exception as e:
             pass
         finally:

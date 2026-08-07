@@ -1,0 +1,61 @@
+syntax = "proto3";
+
+package honeypot.session.v1;
+
+option go_package = "github.com/HuseyinOzlu/honeypot/api/proto/v1/session";
+
+// SessionManagerService orchestrates MicroVM tahsisi and Environment lifecycle
+service SessionManagerService {
+  rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse);
+  rpc AttachStream (stream StreamData) returns (stream StreamData);
+  rpc DestroySession (DestroySessionRequest) returns (DestroySessionResponse);
+  rpc GetSessionStatus (GetSessionStatusRequest) returns (GetSessionStatusResponse);
+}
+
+message CreateSessionRequest {
+  string protocol = 1;         // "SSH" or "HTTP"
+  string attacker_ip = 2;
+  uint32 attacker_port = 3;
+  string requested_env = 4;    // "firecracker", "docker", or "fake"
+  string username = 5;
+  string password = 6;
+}
+
+message CreateSessionResponse {
+  string session_id = 1;       // UUIDv7
+  string vm_id = 2;            // Firecracker VM ID / Container ID
+  string assigned_ip = 3;      // Internal TAP IP
+  bool success = 4;
+  string error_message = 5;
+}
+
+message StreamData {
+  string session_id = 1;
+  bytes payload = 2;
+  enum StreamType {
+    STDIN = 0;
+    STDOUT = 1;
+    STDERR = 2;
+  }
+  StreamType stream_type = 3;
+}
+
+message DestroySessionRequest {
+  string session_id = 1;
+  string reason = 2;
+}
+
+message DestroySessionResponse {
+  bool success = 1;
+}
+
+message GetSessionStatusRequest {
+  string session_id = 1;
+}
+
+message GetSessionStatusResponse {
+  string session_id = 1;
+  string vm_id = 2;
+  string status = 3; // "ACTIVE", "PAUSED", "TERMINATED"
+  uint64 uptime_seconds = 4;
+}

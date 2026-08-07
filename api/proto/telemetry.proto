@@ -1,0 +1,73 @@
+syntax = "proto3";
+
+package honeypot.telemetry.v1;
+
+option go_package = "github.com/HuseyinOzlu/honeypot/api/proto/v1/telemetry";
+
+// TelemetryCollectorService streams eBPF telemetry & Gateway logs to ClickHouse pipeline
+service TelemetryCollectorService {
+  rpc IngestSyscallEvent (SyscallEvent) returns (IngestAck);
+  rpc IngestNetworkEvent (NetworkEvent) returns (IngestAck);
+  rpc IngestFileEvent (FileEvent) returns (IngestAck);
+  rpc IngestArtifactMetadata (ArtifactMetadata) returns (IngestAck);
+}
+
+message SyscallEvent {
+  string session_id = 1;
+  string vm_id = 2;
+  uint32 pid = 3;
+  uint32 ppid = 4;
+  uint32 uid = 5;
+  string syscall_name = 6; // e.g. "execve"
+  string binary_path = 7;
+  repeated string arguments = 8;
+  map<string, string> env_vars = 9;
+  int32 exit_code = 10;
+  int64 timestamp_ms = 11;
+}
+
+message NetworkEvent {
+  string session_id = 1;
+  string vm_id = 2;
+  uint32 pid = 3;
+  string process_name = 4;
+  string direction = 5; // "INBOUND" or "OUTBOUND"
+  string transport_proto = 6; // "TCP" or "UDP"
+  string src_ip = 7;
+  uint32 src_port = 8;
+  string dst_ip = 9;
+  uint32 dst_port = 10;
+  uint64 bytes_sent = 11;
+  uint64 bytes_recv = 12;
+  int64 timestamp_ms = 13;
+}
+
+message FileEvent {
+  string session_id = 1;
+  string vm_id = 2;
+  uint32 pid = 3;
+  string operation = 4; // "OPEN", "CREATE", "UNLINK", "RENAME"
+  string file_path = 5;
+  string old_file_path = 6;
+  string flags = 7;
+  uint32 file_mode = 8;
+  int64 timestamp_ms = 9;
+}
+
+message ArtifactMetadata {
+  string session_id = 1;
+  string vm_id = 2;
+  string sha256 = 3;
+  string md5 = 4;
+  string file_name = 5;
+  string file_path_in_vm = 6;
+  uint64 file_size_bytes = 7;
+  string mime_type = 8;
+  string storage_path = 9;
+  int64 captured_at_ms = 10;
+}
+
+message IngestAck {
+  bool success = 1;
+  string error_message = 2;
+}

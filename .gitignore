@@ -1,22 +1,74 @@
-# Log files
-*.log
-web.log/
+# --- Enterprise Multi-Tier .gitignore ---
 
-# Environment variables / secrets
-.env
-.env.*
-
-# Python Cache & Bytecode
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
-
-# Virtual Environments
+# Environments & Virtual Envs
 .venv/
 venv/
 env/
+ENV/
+*.env
+*.env.local
 
-# IDE / Editor configurations
+# Python / PyCache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Go Binaries & Caches
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+test.bin
+/bin/
+/dist/
+cmd/gateway/gateway
+cmd/session-manager/session-manager
+cmd/telemetry-collector/telemetry-collector
+
+# Rust / Cargo
+/cmd/ebpf-agent/target/
+**/*.rs.bk
+Cargo.lock
+
+# ClickHouse & Database Data
+data/
+clickhouse_data/
+*.log
+*.sql.gz
+*.db
+*.sqlite
+
+# Artifacts & Malware Storage Vault (Do NOT commit real malware samples!)
+storage/artifacts/*
+!storage/artifacts/.gitkeep
+scratch/
+
+# IDE & OS Files
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
