@@ -8,17 +8,18 @@ import (
 	"log/slog"
 	"github.com/HuseyinOzlu/honeypot/internal/sessions"
 	"github.com/HuseyinOzlu/honeypot/pkg/logger"
+	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 )
 
 func main() {
 	_ = logger.InitLogger("session-manager", "debug")
-	slog.Info("Starting Session Manager & Environment Orchestrator Daemon...", "version", "1.0.0")
+	slog.Info(GetMsg(KeyStartingSMAndOrchestrator), "version", "1.0.0")
 
 	_, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	manager := sessions.NewManager()
-	slog.Info("Warm-Pool environments registered successfully", "status", "ready", "instances", 5)
+	slog.Info(GetMsg(KeyWarmPoolRegistered), "status", "ready", "instances", 5)
 
 	_ = manager // Will be served via gRPC API on port 50051
 
@@ -26,6 +27,6 @@ func main() {
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)
 	<-sigChan
 
-	slog.Info("Shutting down Session Manager daemon...")
+	slog.Info(string(KeyShuttingDownSMAndOrch))
 	cancel()
 }

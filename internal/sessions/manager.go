@@ -9,6 +9,7 @@ import (
 	"github.com/HuseyinOzlu/honeypot/internal/environments"
 	"github.com/HuseyinOzlu/honeypot/internal/environments/firecracker"
 	"github.com/HuseyinOzlu/honeypot/pkg/protocol"
+	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 )
 
 // Manager orchestrates session creation, environment selection, and teardown.
@@ -42,7 +43,7 @@ func (m *Manager) CreateSession(ctx context.Context, cfg protocol.SessionConfig)
 
 	vmID, err := env.CreateSession(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf("failed to allocate environment session: %w", err)
+		return nil, fmt.Errorf(GetMsg(KeyEnvSessionFailed), err)
 	}
 
 	session := &Session{
@@ -59,7 +60,7 @@ func (m *Manager) CreateSession(ctx context.Context, cfg protocol.SessionConfig)
 	}
 
 	m.sessions[cfg.SessionID] = session
-	slog.Info("Session created successfully", "session_id", session.SessionID, "vm_id", session.VMID)
+	slog.Info(GetMsg(KeyStartingSession), "session_id", session.SessionID, "vm_id", session.VMID)
 	return session, nil
 }
 
@@ -70,7 +71,7 @@ func (m *Manager) TerminateSession(ctx context.Context, sessionID string) error 
 
 	session, exists := m.sessions[sessionID]
 	if !exists {
-		return fmt.Errorf("session %s not found", sessionID)
+		return fmt.Errorf(GetMsg(KeySessionsNotFound), sessionID)
 	}
 
 	now := time.Now().UTC()
@@ -82,7 +83,7 @@ func (m *Manager) TerminateSession(ctx context.Context, sessionID string) error 
 		_ = env.DestroySession(ctx, sessionID)
 	}
 
-	slog.Info("Session terminated and cleaned up", "session_id", sessionID, "duration_ms", session.DurationMS)
+	slog.Info(GetMsg(KeyTerminatedSession), "session_id", sessionID, "duration_ms", session.DurationMS)
 	return nil
 }
 
