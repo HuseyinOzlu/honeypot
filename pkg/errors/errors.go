@@ -10,4 +10,4 @@ func LogError(contextMsg string, err error) {
 		slog.Error(GetMsg(KeyErrorMessage),
 					"context", contextMsg, "error_detail", err.Error())
 	}
-}
+	}

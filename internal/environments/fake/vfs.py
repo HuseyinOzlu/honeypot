@@ -1,7 +1,6 @@
-import json
 import os
 import time
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 
 class VirtualFileSystem:
     """
@@ -19,14 +18,19 @@ class VirtualFileSystem:
             "children": {
                 "bin": {"type": "dir", "children": {}},
                 "etc": {"type": "dir", "children": {
-                    "passwd": {"type": "file", "content": "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n", "size": 65},
+                    "passwd": {"type": "file", "content": "root:x:0:0:root:/root:/bin/bash\nubuntu:x:1000:1000:Ubuntu:/home/ubuntu:/bin/bash\n", "size": 115},
+                    "shadow": {"type":"file","content":"root:$6$v19fcbc0a385e8f2576853874546bf69361:19000:0:99999:7:::\nubuntu::$6$a8f1c62a83a752ad29f8e7322d45b0c3282:19000:0:99999:7:::\n", "size": 180, "permissions":"-rw-r-----"},
                     "issue": {"type": "file", "content": "Ubuntu 22.04.3 LTS \\n \\l\n", "size": 24}
                 }},
                 "home": {"type": "dir", "children": {
                     "ubuntu": {"type": "dir", "children": {}}
                 }},
                 "root": {"type": "dir", "children": {
-                    ".bashrc": {"type": "file", "content": "# ~/.bashrc: executed by bash(1) for non-login shells.\n", "size": 55}
+                    ".bashrc": {"type": "file", "content": "# ~/.bashrc: executed by bash(1) for non-login shells.\n", "size": 55},
+                    ".env": {"type": "file", "content": "DB_HOST=10.0.0.5\nDB_USER=admin\nDB_PASS=Sup3rS3cr3t!\n", "size": 62, "permissions": "-rw-------"},
+                    ".aws": {"type": "dir", "children": {
+                        "credentials": {"type": "file", "content": "[default]\naws_access_key_id=AKIAIOSFODNN7EXAMPLE\naws_secret_access_key=wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\n", "size": 116, "permissions": "-rw-------"}
+                    }}
                 }},
                 "var": {"type": "dir", "children": {
                     "log": {"type": "dir", "children": {
@@ -62,7 +66,7 @@ class VirtualFileSystem:
         if node.get("type") == "file":
             return f"{path}\n"
         
-        output = []
+        output: List[str] = []
         for name, item in node.get("children", {}).items():
             perm = item.get("permissions", "-rw-r--r--" if item.get("type") == "file" else "drwxr-xr-x")
             owner = item.get("owner", "root")
