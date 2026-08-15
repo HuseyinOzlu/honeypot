@@ -27,7 +27,9 @@ const (
 	//		internal/sessions:
 	KeyEnvSessionFailed			 	MessageKey = "FAILED_ENV_SESSIONS"
 	KeySessionsNotFound			 	MessageKey = "SESSIONS_NOT_FOUND"
-
+	//		internal/environment/fake/client.go
+	KeyPyVFSError					MessageKey = "PY_VFS_ERROR"
+	KeyVFSOffline					MessageKey = "VFS_OFFLINE"
 	// INFO:
 	//		pkg/errors/:
 	KeyErrorMessage				 	MessageKey = "ERROR_MESSAGES" 
@@ -75,6 +77,9 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/sessions
 		KeyEnvSessionFailed:			"Ortam oturumu oluşturulurken hata meydana geldi",
 		KeySessionsNotFound:			"Oturum bilgisi bulanamadı, Oturum Id:",
+		//		internal/environment/fake/client.go
+		KeyPyVFSError:					"Python VFS sunucusuna erişemedi",
+		KeyVFSOffline:					"VFS erişelemez durumda",
 
 		// Bilgi
 		//		pkg/errors/:
@@ -119,7 +124,9 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/sessions
 		KeyEnvSessionFailed:	   		"Failed to allocate environment session: ",
 		KeySessionsNotFound:	   		"Session not found, Sessions id: ",
-
+		//		internal/environment/fake/client.go
+		KeyPyVFSError:					"Python can't be accessed VFS Server",
+		KeyVFSOffline:					"VFS Offline ",
 		// Information
 		//		pkg/errors/:
 		KeyErrorMessage:				"Catched System Error",

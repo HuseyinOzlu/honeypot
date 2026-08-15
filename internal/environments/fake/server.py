@@ -23,22 +23,26 @@ def start_rpc_server(host: str = "0.0.0.0", port: int = 6000):
     try:
         while True:
             client_sock, addr = server_sock.accept()
+            logging.info(f"Go Gateway bağlandı: {addr}")
+
             try:
-                data = client_sock.recv(4096).decode("utf-8").strip()
-                if not data:
-                    client_sock.close()
-                    continue
-                
-                req = json.loads(data)
-                cmd = req.get("command", "")
-                logging.info(f"Executing simulated VFS command: '{cmd}' from {addr}")
-                output = shell.execute(cmd)
-                resp = json.dumps({"output": output, "cwd": vfs.cwd}) + "\n"
-                client_sock.sendall(resp.encode("utf-8"))
+                while True:
+                    data = client_sock.recv(4096).decode("utf-8").strip()
+                    if not data:
+                        # Veri boş geliyorsa Go garsonu telefonu kapatmış demektir, döngüden çık
+                        break
+                    
+                    req = json.loads(data)
+                    cmd = req.get("command", "")
+                    logging.info(f"Executing simulated VFS command: '{cmd}' from {addr}")
+                    output = shell.execute(cmd)
+                    resp = json.dumps({"output": output, "cwd": vfs.cwd}) + "\n"
+                    client_sock.sendall(resp.encode("utf-8"))
             except Exception as e:
                 logging.error(f"Error executing VFS request: {e}")
             finally:
                 client_sock.close()
+                logging.info(f"Gateway bağlantısı kesildi")
     except KeyboardInterrupt:
         logging.info("Shutting down FakeEnvironment worker cleanly.")
     finally:

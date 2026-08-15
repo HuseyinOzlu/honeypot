@@ -10,6 +10,8 @@ import (
 	. "github.com/HuseyinOzlu/honeypot/pkg/constants" // başına const yazmamak için
 	"github.com/HuseyinOzlu/honeypot/pkg/errors"
 	"golang.org/x/crypto/ssh"
+	"context"
+	"github.com/HuseyinOzlu/honeypot/internal/environments/fake" // Python ile haberleşmesi
 )
 
 // TODO: Ağ güvenliği protokollerini buraya entegre etmeye çalışacağım,SSH handshake,
@@ -77,17 +79,33 @@ func (s *Server) handleConnection(conn net.Conn) {
 	go ssh.DiscardRequests(reqs)
 	for newChannel := range chans {
 		if newChannel.ChannelType() == "session" {
+			// Kanalı onaylayıp içeri alıcaz
 			channel, request, err := newChannel.Accept()
 			if err != nil {
-				slog.Error(GetMsg(KeyChannelIsNotAccepted), "error", err)
+				errors.LogError(GetMsg(KeyChannelIsNotAccepted), err)
 				continue
 			}
+			go func(in <-chan *ssh.Request) {
+				for req := range in {
+					if req.Type == "pty-req" || req.Type == "shell" {
+						req.Reply(true, nil)
+					} else {
+						req.Reply(false, nil)
+					}
+				}
+			}(request)
+			//Birleştirdik
+			//1. Python Köprüsünü ayağa kaldır (6000 portunda)
+			fakeEnv := fake.NewFakeEnvironment("127.0.0.1:6000")
 
-			slog.Info(GetMsg(KeyWantToOpen), "ip", conn.RemoteAddr().String(), "request", request)
-			go ssh.DiscardRequests(request)
-
-			channel.Write([]byte("Welcome to Ubuntu 22.04 LTS (GNU/Linux)\r\n$ "))
-		} else {
+			// 2. Hacker'ın ekranını (channel) doğrudan mutfağa bağla
+			// SSH channel hem io.Reader hem de io.Writer'dır!
+			err = fakeEnv.AttachStream(context.Background(), "test-session", channel, channel, channel)
+			if err != nil {
+				channel.Write([]byte("\r\nSistemdeki geçici bir arıza var. Lütfen daha sonra tekrar deneyiniz.\r\n"))
+				channel.Close()
+			}
+			} else {
 			newChannel.Reject(ssh.UnknownChannelType, "Just terminal conneciton supported")
 		}
 

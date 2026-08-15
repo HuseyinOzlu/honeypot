@@ -11,9 +11,10 @@ import (
 
 	"github.com/HuseyinOzlu/honeypot/internal/environments"	
 	// TODO: Sabitleri ayarla 
-	_ "github.com/HuseyinOzlu/honeypot/pkg/constants"
+	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"github.com/HuseyinOzlu/honeypot/pkg/errors"
 	"github.com/HuseyinOzlu/honeypot/pkg/protocol"	
+	"golang.org/x/term"
 )
 
 // FakeEnvironment, Python'daki (server.py) VFS motoruyla konuşan Go istemcisidir.
@@ -41,22 +42,33 @@ func (f *FakeEnvironment) AttachStream(ctx context.Context, sessionID string, st
 	// 1. Python Mutfak sunucusuna (TCP 6000) bağlan!
 	conn, err := net.Dial("tcp", f.rpcAddress)
 	if err != nil {
-		errors.LogError("Python VFS sunucusuna ulaşılamadı", err)
-		return fmt.Errorf("vfs offline")
+		errors.LogError(GetMsg(KeyPyVFSError), err)
+		return fmt.Errorf(GetMsg(KeyVFSOffline))
 	}
 	defer conn.Close()
 
 	// 2. Hacker'ın klavyesini (stdin) dinlemek için bir Scanner oluştur
-	scanner := bufio.NewScanner(stdin)
+	rw := struct {
+		io.Reader
+		io.Writer
+	}{stdin, stdout}
+	terminal := term.NewTerminal(rw, "root@ubuntu:~# ")
 
 	// 3. Hacker bir şeyler yazıp enter a basana kadar bekle (sonsuz döngü)
-	for scanner.Scan() {
-		cmdLine := strings.TrimSpace(scanner.Text())
+	for {
+		cmdLine, err := terminal.ReadLine()
+		if err != nil { 
+		break
+		}
+		cmdLine = strings.TrimSpace(cmdLine)
 
 		// Eğer hacker "exit" yazarsa, bağlantıyı kopar ve tüneli kapat"
 		if cmdLine == "exit" || cmdLine == "EXİT" || cmdLine == "logout" || cmdLine == "LOGOUT" {
 			stdout.Write([]byte("logout\r\n"))
 			break
+		}
+		if cmdLine == "" {
+			continue
 		}
 		// 4. Hacker'ın yazdığı komutu JSON'a çevir (Paketle)
 		reqBytes, _ := json.Marshal(map[string]string{"command": cmdLine})
@@ -76,16 +88,20 @@ func (f *FakeEnvironment) AttachStream(ctx context.Context, sessionID string, st
 		json.Unmarshal([]byte(resqStr), &respMap)
 
 		// 8. Python'un ürettiği sahte çıktıyı Hacker'ın ekranına (stdout) bas!
-		if output , ok := respMap["output"].(string); ok {
+		/*if output , ok := respMap["output"].(string); ok {
 			// satır sonlarına SSH'ın anlayacağı şekle (\r\n) çeviriyoruz
 			formattedOutput := strings.ReplaceAll(output, "\n", "\r\n")
 			stdout.Write([]byte(formattedOutput))
+		}*/
+		if output, ok := respMap["output"].(string); ok {
+			// terminal.Write satır sonlarını (\n -> \r\n) otomatik çevirir.
+			terminal.Write([]byte(output))
 		}
-		// Yeni komut için terminalde $ işaretini tekrar gösteriyoruz
-		if cwd, ok := respMap["output"].(string); ok {
-			stdout.Write([]byte(fmt.Sprintf("\r\nroot@ubuntu:%s$ ",cwd)))
-		} else {
-			stdout.Write([]byte("\r\n$ "))
+		
+		// Yeni komut için terminalde $ işaretini terminal.SetPrompt ile güncelliyoruz
+		// DİKKAT: "output" değil "cwd" (Current Working Directory) alıyoruz!
+		if cwd, ok := respMap["cwd"].(string); ok {
+			terminal.SetPrompt(fmt.Sprintf("root@ubuntu:%s$ ", cwd))
 		}
 	}
 	return nil
