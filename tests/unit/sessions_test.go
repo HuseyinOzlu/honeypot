@@ -27,13 +27,11 @@ func TestSessionManagerLifecycle(t *testing.T) {
 		t.Errorf("Expected session status %s, got %s", sessions.StatusActive, session.Status)
 	}
 
-	// Verify session retrieval
 	retrieved, exists := mgr.GetSession(cfg.SessionID)
 	if !exists || retrieved.VMID != session.VMID {
 		t.Errorf("Failed to correctly retrieve created session from manager map")
 	}
 
-	// Simulate short interaction
 	time.Sleep(10 * time.Millisecond)
 
 	err = mgr.TerminateSession(context.Background(), cfg.SessionID)

@@ -44,7 +44,6 @@ class FakeShell:
         args = tokens[1:] # Örn ["-la"]
 
         if cmd in self.registery:
-            # Sınıfı bul ve execute tetikle
             return self.registery[cmd].execute(args, self.vfs, self.env)
         return BashErrors.CMD_NOT_FOUND.format(cmd=cmd)
     

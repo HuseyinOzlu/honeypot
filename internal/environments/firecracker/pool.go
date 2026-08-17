@@ -10,14 +10,12 @@ import (
 	"github.com/HuseyinOzlu/honeypot/pkg/protocol"
 )
 
-// FirecrackerEnvironment implements environments.Environment using KVM MicroVMs.
 type FirecrackerEnvironment struct {
 	mu           sync.Mutex
 	warmPoolSize int
 	activeVMs    map[string]*MachineInstance
 }
 
-// MachineInstance represents an active or pooled Firecracker MicroVM.
 type MachineInstance struct {
 	VMID      string
 	TAPInterface string
@@ -25,7 +23,6 @@ type MachineInstance struct {
 	IsPaused  bool
 }
 
-// NewFirecrackerEnvironment initializes a warm-pool of MicroVMs.
 func NewFirecrackerEnvironment(poolSize int) *FirecrackerEnvironment {
 	return &FirecrackerEnvironment{
 		warmPoolSize: poolSize,
@@ -37,7 +34,6 @@ func (f *FirecrackerEnvironment) CreateSession(ctx context.Context, cfg protocol
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
-	// In real deployment, grab a paused MicroVM from warm pool and resume it (<150ms)
 	vmID := fmt.Sprintf("fc-vm-%s", cfg.SessionID[:8])
 	instance := &MachineInstance{
 		VMID:         vmID,

@@ -4,7 +4,6 @@ import (
 	"time"
 )
 
-// SessionStatus defines the state machine of an active honeypot session.
 type SessionStatus string
 
 const (
@@ -14,7 +13,6 @@ const (
 	StatusTerminated   SessionStatus = "TERMINATED"
 )
 
-// Session represents an end-to-end tracked interaction across the gateway and target VM.
 type Session struct {
 	SessionID     string        `json:"session_id"`
 	VMID          string        `json:"vm_id"`

@@ -29,10 +29,15 @@ def start_rpc_server(host: str = "0.0.0.0", port: int = 6000):
                 while True:
                     data = client_sock.recv(4096).decode("utf-8").strip()
                     if not data:
-                        # Veri boş geliyorsa Go garsonu telefonu kapatmış demektir, döngüden çık
                         break
                     
                     req = json.loads(data)
+                    token = req.get("token", "")
+                    if token != "HoneypotSuperSecretToken123!":
+                        logging.warning(f"Yetkisiz bağlantı girişimi engellendi (Yanlış Parola): {addr}")
+                        yanit = json.dumps({"output": "Unauthorized connection. \n", "cwd":vfs.cwd}) + "\n"
+                        client_sock.sendall(yanit.encode("utf-8"))
+                        break
                     cmd = req.get("command", "")
                     logging.info(f"Executing simulated VFS command: '{cmd}' from {addr}")
                     output = shell.execute(cmd)

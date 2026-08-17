@@ -12,32 +12,27 @@ import (
 	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 )
 
-// Manager orchestrates session creation, environment selection, and teardown.
 type Manager struct {
 	mu           sync.RWMutex
 	sessions     map[string]*Session
 	envs         map[string]environments.Environment
 }
 
-// NewManager initializes the Session Manager daemon engine with available environments.
 func NewManager() *Manager {
 	m := &Manager{
 		sessions: make(map[string]*Session),
 		envs:     make(map[string]environments.Environment),
 	}
-	// Register environments
 	m.envs[protocol.FirecrackerEnv] = firecracker.NewFirecrackerEnvironment(5)
 	return m
 }
 
-// CreateSession allocates a VM and registers a new tracking session.
 func (m *Manager) CreateSession(ctx context.Context, cfg protocol.SessionConfig) (*Session, error) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 
 	env, exists := m.envs[cfg.EnvType]
 	if !exists {
-		// Default fallback
 		env = m.envs[protocol.FirecrackerEnv]
 	}
 
@@ -64,7 +59,6 @@ func (m *Manager) CreateSession(ctx context.Context, cfg protocol.SessionConfig)
 	return session, nil
 }
 
-// TerminateSession destroys the environment and finalizes telemetry metrics.
 func (m *Manager) TerminateSession(ctx context.Context, sessionID string) error {
 	m.mu.Lock()
 	defer m.mu.Unlock()
@@ -87,7 +81,6 @@ func (m *Manager) TerminateSession(ctx context.Context, sessionID string) error 
 	return nil
 }
 
-// GetSession retrieves session details safely.
 func (m *Manager) GetSession(sessionID string) (*Session, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

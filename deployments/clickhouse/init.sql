@@ -1,7 +1,4 @@
--- ==============================================================================
--- ANTIGRAVITY HONEYPOT PLATFORM - CLICKHOUSE TELEMETRY SCHEMA (v1.0)
--- Optimized with ReplacingMergeTree & MergeTree for High-Throughput Ingestion
--- ==============================================================================
+
 
 CREATE DATABASE IF NOT EXISTS honeypot_telemetry;
 

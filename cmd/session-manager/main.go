@@ -21,7 +21,7 @@ func main() {
 	manager := sessions.NewManager()
 	slog.Info(GetMsg(KeyWarmPoolRegistered), "status", "ready", "instances", 5)
 
-	_ = manager // Will be served via gRPC API on port 50051
+	_ = manager
 
 	sigChan := make(chan os.Signal, 1)
 	signal.Notify(sigChan, syscall.SIGINT, syscall.SIGTERM)

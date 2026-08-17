@@ -1,17 +1,21 @@
 package ssh
-
-//Burası SSH loglarını, handshake, key kontrolü gibi işlemleri yapacak olan ana yapı yani giriş yakalayan kapı
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
+	"crypto/x509"
+	"encoding/pem"
+	"fmt"
 	"log/slog"
 	"net"
-	
-	. "github.com/HuseyinOzlu/honeypot/pkg/constants" // başına const yazmamak için
+	"os"
+	"time"
+
+	"github.com/HuseyinOzlu/honeypot/internal/environments/fake" 
+	. "github.com/HuseyinOzlu/honeypot/pkg/config"
+	. "github.com/HuseyinOzlu/honeypot/pkg/constants" 
 	"github.com/HuseyinOzlu/honeypot/pkg/errors"
 	"golang.org/x/crypto/ssh"
-	"context"
-	"github.com/HuseyinOzlu/honeypot/internal/environments/fake" // Python ile haberleşmesi
 )
 
 // TODO: Ağ güvenliği protokollerini buraya entegre etmeye çalışacağım,SSH handshake,
@@ -23,19 +27,13 @@ func NewServer() *Server {
 	return &Server{}
 }
 func (s *Server) Start(addr string) error {
-	//RSA Key Olusturma
-	slog.Info(GetMsg(KeyFakeSSHKey))
-	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+
+	signer, err := loadOrGenerateKey(AppConfig.Server.SSHKeyPath)
 	if err != nil {
-		errors.LogError(GetMsg(KeySSHKeyGenFailed), err)
+		errors.LogError("SSH Kimlik Dosyası okunamadı", err)
 		return err
 	}
-	hostSigner, err := ssh.NewSignerFromKey(privateKey)
-	if err != nil {
-		errors.LogError(GetMsg(KeyErrorSignerFromKey), err)
-		return err
-	}
-	s.hostSigner = hostSigner
+	s.hostSigner = signer
 
 	listener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -48,15 +46,13 @@ func (s *Server) Start(addr string) error {
 		conn, err := listener.Accept()
 		if err != nil {
 			errors.LogError(GetMsg(KeyConnectionNotAcccepted), err)
-			continue // bir hata oldugu zaman döngüden çıkmasın diye
+			continue 
 		}
 		go s.handleConnection(conn)
 
 	}
 }
 
-// -TODO: SSH username ve şifre sorgusu yazıcaksın
-// -TODO: SSH handshake -
 // TODO: key kontrolü
 func (s *Server) handleConnection(conn net.Conn) {
 	slog.Info(GetMsg(KeyConnectionCatched), "ip", conn.RemoteAddr().String())
@@ -64,10 +60,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
 			slog.Info(GetMsg(KeyTryingPasswd), "user", c.User(), "password", string(pass))
-			return nil, nil // Şifreyi doğru kabul etmek için hata girmedik
+			return nil, nil
 		},
 	}
-	// RSA yolladık ki güvenli gibi görünsün
 	config.AddHostKey(s.hostSigner)
 	//TODO: Rsq key oluşturucaz
 	sshConn, chans, reqs, err := ssh.NewServerConn(conn, config)
@@ -79,7 +74,6 @@ func (s *Server) handleConnection(conn net.Conn) {
 	go ssh.DiscardRequests(reqs)
 	for newChannel := range chans {
 		if newChannel.ChannelType() == "session" {
-			// Kanalı onaylayıp içeri alıcaz
 			channel, request, err := newChannel.Accept()
 			if err != nil {
 				errors.LogError(GetMsg(KeyChannelIsNotAccepted), err)
@@ -94,21 +88,51 @@ func (s *Server) handleConnection(conn net.Conn) {
 					}
 				}
 			}(request)
-			//Birleştirdik
-			//1. Python Köprüsünü ayağa kaldır (6000 portunda)
-			fakeEnv := fake.NewFakeEnvironment("127.0.0.1:6000")
+			fakeEnv := fake.NewFakeEnvironment(AppConfig.PythonVFS.Address)
+			hackerIP := sshConn.RemoteAddr().String() // Örn: 192.168.1.15:54321
+			hackerUser := sshConn.User()
+			
+			ctx := context.WithValue(context.Background(), "hacker_ip", hackerIP)
+			ctx = context.WithValue(ctx, "hacker_user", hackerUser)
 
-			// 2. Hacker'ın ekranını (channel) doğrudan mutfağa bağla
-			// SSH channel hem io.Reader hem de io.Writer'dır!
-			err = fakeEnv.AttachStream(context.Background(), "test-session", channel, channel, channel)
+			uniqueSessionID := fmt.Sprintf("sess-%d", time.Now().UnixNano())
+
+			err = fakeEnv.AttachStream(ctx, uniqueSessionID, channel, channel, channel)
 			if err != nil {
 				channel.Write([]byte("\r\nSistemdeki geçici bir arıza var. Lütfen daha sonra tekrar deneyiniz.\r\n"))
 				channel.Close()
 			}
+			channel.Close()
 			} else {
 			newChannel.Reject(ssh.UnknownChannelType, "Just terminal conneciton supported")
 		}
 
 	}
 
+}
+// Key üretmesi için yada sistemde zaten kayıtlıysa onu kullanmak için
+func loadOrGenerateKey(filePath string) (ssh.Signer, error) {
+	if keyBytes, err := os.ReadFile(filePath); err == nil {
+		return ssh.ParsePrivateKey(keyBytes) 
+	}
+
+	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, err
+	}
+
+	// Üretilen anahtarı standart Pem formatına çevir
+	privateKeyPEM := &pem.Block{
+		Type: "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(privateKey),
+	}
+	keyBytes := pem.EncodeToMemory(privateKeyPEM)
+
+	// Anahtarı diske kaydettik (sadece kurucu okuyabilir (0600))
+	err = os.WriteFile(filePath, keyBytes, 0600)
+	if err != nil {
+		return nil, err
+	}
+
+	return ssh.ParsePrivateKey(keyBytes)
 }

@@ -1,4 +1,3 @@
-# HTTP Decoy Templates for catching automated scanners and targeted exploit attempts
 
 WORDPRESS_LOGIN_HTML = """<!DOCTYPE html>
 <html lang="en-US">

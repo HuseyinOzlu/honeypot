@@ -1,10 +1,5 @@
 from abc import ABC, abstractmethod
 from typing import List, Dict
-
-# ileride döngüsel bağımlılık(circular import) olmasın diye VFS'nin
-# tipini sadece string olarak veriyoruz.
-# Veya 'Any' de kullanabiliriz
-
 from typing import Any
 
 class BaseCommand(ABC):

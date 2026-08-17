@@ -17,12 +17,10 @@ class TestVirtualFileSystemAndShell(unittest.TestCase):
         self.assertIn("uid=0(root)", self.shell.execute("id"))
 
     def test_file_create_and_read(self):
-        # Simulate echo redirect into file
         self.shell.execute("echo 'secret payload' > /root/test.txt")
         content = self.vfs.read_file("/root/test.txt")
         self.assertEqual(content.strip(), "secret payload")
 
-        # Verify cat returns the same
         cat_out = self.shell.execute("cat /root/test.txt")
         self.assertEqual(cat_out.strip(), "secret payload")
 

@@ -1,8 +1,8 @@
 [package]
 name = "ebpf-agent"
 version = "0.1.0"
-edition = "2021"
-authors = ["Antigravity Security Team"]
+edition = "2026"
+authors = ["HuseyinOzlu"]
 description = "High-interaction kernel telemetry agent using eBPF hooks for Firecracker MicroVMs"
 
 [dependencies]

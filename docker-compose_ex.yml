@@ -1,0 +1,105 @@
+version: '3.8'
+
+services:
+  # 1. ClickHouse - High Throughput OLAP Telemetry Engine
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.3-alpine
+    container_name: honeypot-clickhouse
+    hostname: clickhouse
+    restart: always
+    ports:
+      - "8123:8123" # HTTP API
+      - "9000:9000" # Native TCP
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+      - ./deployments/clickhouse/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    environment:
+      CLICKHOUSE_DB: honeypot_telemetry
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    networks:
+      - honeypot-net
+
+  # 2. Session Manager Daemon (Go) - Orchestrates Environments & VMs
+  session-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: session-manager
+    container_name: honeypot-session-manager
+    restart: always
+    ports:
+      - "50051:50051" # gRPC Session API
+    environment:
+      - LOG_LEVEL=debug
+      - CLICKHOUSE_ADDR=clickhouse:9000
+    depends_on:
+      - clickhouse
+    networks:
+      - honeypot-net
+
+  # 3. Telemetry Collector Pipeline (Go) - Buffers & Ingests Events to ClickHouse
+  telemetry-collector:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: telemetry-collector
+    container_name: honeypot-telemetry-collector
+    restart: always
+    ports:
+      - "50052:50052" # gRPC Telemetry Ingest API
+    environment:
+      - LOG_LEVEL=debug
+      - CLICKHOUSE_ADDR=clickhouse:9000
+      - BATCH_SIZE=500
+      - FLUSH_INTERVAL_MS=1000
+    depends_on:
+      - clickhouse
+    networks:
+      - honeypot-net
+
+  # 4. Edge Gateway (Go) - Multiplexed SSH & HTTP Decoy Entry Point
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: gateway
+    container_name: honeypot-gateway
+    restart: always
+    ports:
+      - "2222:2222" # Honeypot SSH Port
+      - "8080:8080" # Honeypot HTTP Decoy Port
+    environment:
+      - LOG_LEVEL=info
+      - SESSION_MANAGER_ADDR=session-manager:50051
+      - TELEMETRY_COLLECTOR_ADDR=telemetry-collector:50052
+    depends_on:
+      - session-manager
+      - telemetry-collector
+    networks:
+      - honeypot-net
+
+  # 5. FakeEnvironment Fallback Engine (Python VFS Adapter)
+  fake-environment:
+    build:
+      context: .
+      dockerfile: deployments/docker/Dockerfile.fake-env
+    container_name: honeypot-fake-environment
+    restart: always
+    ports:
+      - "6000:6000" # Internal VFS RPC / Socket port
+    environment:
+      - LOG_LEVEL=info
+    networks:
+      - honeypot-net
+
+volumes:
+  clickhouse_data:
+
+networks:
+  honeypot-net:
+    driver: bridge

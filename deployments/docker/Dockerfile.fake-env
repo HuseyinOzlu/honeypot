@@ -1,7 +1,3 @@
-# ==============================================================================
-# ANTIGRAVITY HONEYPOT PLATFORM - PYTHON FAKE ENVIRONMENT RUNTIME
-# Runs the lightweight VFS and Nano/Top simulations as a low-cost fallback
-# ==============================================================================
 
 FROM python:3.11-slim
 

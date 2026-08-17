@@ -3,10 +3,6 @@ import time
 from typing import Dict, Any, Optional, List
 
 class VirtualFileSystem:
-    """
-    Lightweight in-memory Linux filesystem simulation used by FakeEnvironment.
-    Supports basic POSIX operations (open, read, write, mkdir, ls, rm).
-    """
     def __init__(self, commands_path: Optional[str] = None):
         self.root: Dict[str, Any] = {
             "type": "dir",

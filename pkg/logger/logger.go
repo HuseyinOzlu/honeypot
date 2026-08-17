@@ -5,7 +5,6 @@ import (
 	"os"
 )
 
-// InitLogger initializes an enterprise JSON structured logger.
 func InitLogger(serviceName string, level string) *slog.Logger {
 	var logLevel slog.Level
 	switch level {

@@ -1,0 +1,11 @@
+server:
+  port: "2222"
+  ssh_key_path: ".ssh_host_rsa_key"
+
+python_vfs:
+  address: "127.0.0.1:6000"
+  auth_token: "HoneypotSuperSecretToken123!"
+
+telemetry:
+  clickhouse_url: "127.0.0.1:9000"
+  password: "123456"

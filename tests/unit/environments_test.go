@@ -22,7 +22,6 @@ func TestFirecrackerEnvironmentAllocation(t *testing.T) {
 	}
 
 	if vmID != "fc-vm-session-" {
-		// Just verify not empty and matches expected pattern prefix
 		if len(vmID) == 0 {
 			t.Errorf("Allocated VM ID is empty")
 		}
