@@ -2,6 +2,8 @@ package telemetry
 import (
 	"context"
 	"log"
+	"encoding/json"
+	"os"
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
@@ -9,13 +11,13 @@ import (
 var DB driver.Conn
 
 
-func InitClickhouse(addr string) error {
+func InitClickhouse(addr string, password string) error {
 	var err error
 	DB, err = clickhouse.Open(&clickhouse.Options{
 		Addr: []string{addr},
 		Auth: clickhouse.Auth{
 		Username: "default",
-		Password: "123456",
+		Password: password,
 	},
 	})
 	if err != nil {
@@ -52,7 +54,20 @@ func LogCommand(event CommandEvent) {
 			e.SessionID,e.IPAddress,e.Username,e.Command,e.Output,e.Timestamp,
 		)
 		if err != nil {
-			log.Printf("Telemetry kayıt hatası: %v", err)
+			log.Printf("ClickHouse'a ulaşılamıyor! Log diske yazılıyor hata: %v", err)
+			writeFallbackLog(e)
 		}
 	}(event)
+}
+
+func writeFallbackLog(event CommandEvent){
+	file, err := os.OpenFile("fallback_logs.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Printf("HATA! Veriler ClickHouse ve Diske'de yazılamadı: %v", err)
+		return
+	}
+	defer file.Close()
+
+	logData, _ := json.Marshal(event)
+	file.Write(append(logData, '\n'))
 }

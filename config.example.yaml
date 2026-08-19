@@ -1,14 +1,13 @@
 server:
-  port: "2222"
   ssh_key_path: ".ssh_host_rsa_key"
-
-python_vfs:
-  address: "vfs:5000"
-  auth_token: "HoneypotSuperSecretToken123!"
 
 telemetry:
   clickhouse_url: "clickhouse:9000"
   password: "123456"
 
+python_vfs:
+  address: "vfs:5000"
+  auth_token: "secret-token-123"
+
 ai_fallback:
-  api_key: "APIKEY"
+  api_key: "YOUR_GEMINI_API_KEY_HERE"

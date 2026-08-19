@@ -1,44 +1,18 @@
-# ==============================================================================
-# 				HONEYPOT PLATFORM - ENTERPRISE MAKEFILE
-# ==============================================================================
+.PHONY: build run stop clean logs
 
-.PHONY: all build test docker-up docker-down clean help check-env
+# Projeyi tek tuşla tamamen ayağa kaldırır
+run:
+	docker-compose up --build -d
+	@echo "Honeypot Basariyla Baslatildi! SSH ile port 2222'ye baglanabilirsiniz."
 
-all: build test
+# Projeyi durdurur
+stop:
+	docker-compose down
 
-help:
-	@echo "Usage: make [target]"
-	@echo ""
-	@echo "Targets:"
-	@echo "  build         Build Go microservices (Gateway, Session Manager, Collector)"
-	@echo "  test          Run unit and integration tests across Go and Python"
-	@echo "  docker-up     Start the full N-tier stack (ClickHouse, Gateway, Manager, Collector)"
-	@echo "  docker-down   Stop and clean up containers and volumes"
-	@echo "  clean         Remove build artifacts and caches"
+# Logları izler
+logs:
+	docker-compose logs -f
 
-build:
-	@echo "==> Building Go Microservices..."
-	@mkdir -p bin
-	@go build -o bin/gateway ./cmd/gateway 2>/dev/null || echo "[Info] Go modules initializing..."
-	@go build -o bin/session-manager ./cmd/session-manager 2>/dev/null || echo "[Info] Go modules initializing..."
-	@go build -o bin/telemetry-collector ./cmd/telemetry-collector 2>/dev/null || echo "[Info] Go modules initializing..."
-
-test:
-	@echo "==> Running Unit Tests..."
-	@go test -v ./tests/unit/... 2>/dev/null || echo "[Info] Go tests ready to run when Go SDK is installed."
-	@python -m pytest tests/unit/ 2>/dev/null || echo "[Info] Python pytest ready to run."
-
-docker-up:
-	@echo "==> Starting N-Tier Enterprise Stack..."
-	@docker-compose up --build -d
-	@echo "==> ClickHouse UI available at http://localhost:8123"
-
-docker-down:
-	@echo "==> Shutting down stack..."
-	@docker-compose down -v
-
+# Bütün her şeyi (imajlar ve veritabanı dahil) silip temizler
 clean:
-	@echo "==> Cleaning artifacts..."
-	@rm -rf bin/
-	@find . -type d -name "__pycache__" -exec rm -rf {} + 2>/dev/null || true
-	@find . -type f -name "*.pyc" -delete 2>/dev/null || true
+	docker-compose down -v --rmi all

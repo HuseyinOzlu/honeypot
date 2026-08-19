@@ -1,73 +1,59 @@
-
-# Environments & Virtual Envs
-.venv/
-venv/
-env/
-ENV/
-*.env
-*.env.local
-
-# Python / PyCache
-__pycache__/
-*.py[cod]
-*$py.class
-*.so
-.Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-.pytest_cache/
-.coverage
-htmlcov/
-
-# Go Binaries & Caches
+# ========================
+# 1. Go Standartları
+# ========================
+# Derlenmiş çalıştırılabilir dosyalar (Binaries)
 *.exe
 *.exe~
 *.dll
 *.so
 *.dylib
-test.bin
-/bin/
-/dist/
-cmd/gateway/gateway
-cmd/session-manager/session-manager
-cmd/telemetry-collector/telemetry-collector
+bin/
+/honeypot
+/honeypot.exe
 
-# Rust / Cargo
-/cmd/ebpf-agent/target/
-**/*.rs.bk
-Cargo.lock
+# Test çıktıları ve Profiling
+*.test
+*.out
+*.prof
+*.cgo1.go
+*.cgo2.c
+_cgo_defun.c
+_cgo_gotypes.go
+_cgo_export.*
+_testmain.go
 
-# ClickHouse & Database Data
-data/
-clickhouse_data/
+# Go Vendor klasörü (Modüller)
+vendor/
+
+# ========================
+# 2. Hassas Veriler (Secrets) ve Konfigürasyon
+# ========================
+# Asıl konfigürasyonu ve şifreleri gizle (NOT: config.example.yaml GitHub'a gitmelidir)
+config.yaml
+.env
+*.pem
+*.key
+.ssh_host_rsa_key
+
+# ========================
+# 3. Loglar ve Veritabanı
+# ========================
 *.log
-*.sql.gz
-*.db
-*.sqlite
+fallback_logs.json
+data/
+db/
 
-# Artifacts & Malware Storage Vault (Do NOT commit real malware samples!)
-storage/artifacts/*
-!storage/artifacts/.gitkeep
-scratch/
-
-# IDE & OS Files
+# ========================
+# 4. IDE ve OS Kalıntıları
+# ========================
+# VS Code
 .vscode/
+*.code-workspace
+
+# JetBrains (GoLand vs)
 .idea/
-*.swp
-*.swo
-*~
+*.iml
+
+# OS
 .DS_Store
 Thumbs.db

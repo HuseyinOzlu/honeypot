@@ -20,6 +20,10 @@ type Config struct {
 		ClickHouseURL string `yaml:"clickhouse_url"`
 		Password	  string `yaml:"password"`
 	} `yaml:"telemetry"`
+	
+	AIFallback struct {
+		APIKey string `yaml:"api_key"`
+	} `yaml:"ai_fallback"`
 }
 
 var AppConfig *Config

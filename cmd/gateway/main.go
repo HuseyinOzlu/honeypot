@@ -18,8 +18,8 @@ func main() {
 	if err := config.LoadConfig("config.yaml"); err != nil {
 		panic("Kongigurasyon dosyası okunamadı: " + err.Error())
 	}
-	if err := telemetry.InitClickhouse(config.AppConfig.Telemetry.ClickHouseURL); err != nil {
-		panic("Veritabanı çöktü, sistem başlatılamıyor: " + err.Error())
+	if err := telemetry.InitClickhouse(config.AppConfig.Telemetry.ClickHouseURL, config.AppConfig.Telemetry.Password); err != nil {
+		slog.Info("Veritabanı çöktü, sistem Log kaydına(fallback_logs.json a yazılıyor) " + err.Error())
 	}
 
 	
