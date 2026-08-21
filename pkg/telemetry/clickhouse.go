@@ -36,7 +36,22 @@ func InitClickhouse(addr string, password string) error {
 			output String,
 			timestamp DateTime
 		) ENGINE = MergeTree()
-		ORDER BY (timestamp, session_id)
+		ORDER BY (timestamp, session_id);
+	`)
+	if err != nil {
+		return err
+	}
+
+	err = DB.Exec(context.Background(),`
+		CREATE TABLE IF NOT EXISTS http_logs (
+			ip_address String,
+			method String,
+			path String,
+			user_agent String,
+			payload String,
+			timestamp DateTime
+		) ENGINE = MergeTree()
+		ORDER BY timestamp;
 	`)
 
 	if err != nil {
@@ -61,7 +76,12 @@ func LogCommand(event CommandEvent) {
 }
 
 func writeFallbackLog(event CommandEvent){
-	file, err := os.OpenFile("fallback_logs.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	// Logs klasörü yoksa oluştur
+	if err := os.MkdirAll("/app/logs", 0755); err != nil {
+		log.Printf("HATA! logs klasörü oluşturulamadı: %v", err)
+	}
+
+	file, err := os.OpenFile("/app/logs/fallback_logs.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
 		log.Printf("HATA! Veriler ClickHouse ve Diske'de yazılamadı: %v", err)
 		return
@@ -70,4 +90,16 @@ func writeFallbackLog(event CommandEvent){
 
 	logData, _ := json.Marshal(event)
 	file.Write(append(logData, '\n'))
+}
+
+func LogHTTP(event HTTPEvent) {
+	go func(e HTTPEvent) {
+		err := DB.Exec(context.Background(),
+			"INSERT INTO http_logs (ip_address, method, path, user_agent, payload, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
+			e.IPAddress, e.Method, e.Path, e.UserAgent, e.Payload, e.Timestamp,
+		)
+		if err != nil {
+			log.Printf("HTTP Log ClickHouse'a yazılamadı: %v", err)
+		}
+	}(event)
 }

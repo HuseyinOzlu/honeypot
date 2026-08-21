@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/HuseyinOzlu/honeypot/internal/protocols/http"
 	"github.com/HuseyinOzlu/honeypot/internal/protocols/ssh"
 	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"github.com/HuseyinOzlu/honeypot/pkg/logger"
@@ -34,14 +35,12 @@ func main() {
 
 	slog.Info(GetMsg(KeyListeningGateway), "ssh_port", 2222, "http_port", 8080)
 
+	go http.StartServer("8080")
+
 	serverPort := config.AppConfig.Server.Port
 	sshServer := ssh.NewServer()
 
-	if err := sshServer.Start("0.0.0.0:" + serverPort); err != nil {
-		panic("SSH sunucusu başlatılamadı: "+ err.Error())
-	}
-
-	go sshServer.Start(":2222")
+	go sshServer.Start("0.0.0.0:" + serverPort)
 	<-sigChan
 	slog.Info(GetMsg(KeyShuttingDownGateway))
 	cancel()

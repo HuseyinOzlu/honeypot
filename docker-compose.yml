@@ -28,10 +28,13 @@ services:
     container_name: honeypot_gateway
     ports:
       - "2222:2222"
+      - "8080:8080"
     volumes:
       - ./config.yaml:/app/config.yaml
       # Go kodunun Docker konteynerleri yaratabilmesi için Docker Socket'i bağlıyoruz:
       - /var/run/docker.sock:/var/run/docker.sock
+      # Fallback logları Windows masaüstüne düşsün diye volume bağlıyoruz:
+      - ./logs:/app/logs
     depends_on:
       - clickhouse
       - vfs
