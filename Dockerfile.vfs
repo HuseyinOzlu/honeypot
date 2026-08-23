@@ -1,5 +1,6 @@
 FROM python:3.11-slim
 WORKDIR /app
-COPY internal/environments/fake/vfs.py /app/vfs.py
+COPY internal/environments/fake /app/internal/environments/fake
+ENV PYTHONPATH=/app
 EXPOSE 5000
-CMD ["python", "vfs.py"]
+CMD ["python", "internal/environments/fake/server.py"]

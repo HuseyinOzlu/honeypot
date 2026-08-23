@@ -21,6 +21,7 @@ func StartServer(port string) {
 	mux.HandleFunc("/login", adminLoginHandler)
 	mux.HandleFunc("/phpmyadmin", pmaLoginHandler)
 	mux.HandleFunc("/phpmyadmin/", pmaLoginHandler)
+	mux.HandleFunc("/api/telemetry/ebpf", ebpfTelemetryHandler)
 
 	loggedMux := loggingMiddleware(mux)
 
@@ -103,4 +104,14 @@ func pmaLoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Write([]byte("<!DOCTYPE html><html><head><title>phpMyAdmin</title><style>body { background: #ebebeb; font-family: sans-serif; } .pma-box { background: white; border: 1px solid #aaa; width: 450px; margin: 100px auto; padding: 20px; border-radius: 5px; } .input { width: 100%; padding: 8px; margin: 8px 0; box-sizing: border-box; } .submit { background: #ff9900; border: 1px solid #ff9900; color: white; padding: 8px 16px; cursor: pointer; }</style></head><body><div class=\"pma-box\"><h2>Welcome to phpMyAdmin</h2><form method=\"POST\"><label>Username:</label><input type=\"text\" name=\"pma_username\" class=\"input\" required><label>Password:</label><input type=\"password\" name=\"pma_password\" class=\"input\"><input type=\"submit\" value=\"Go\" class=\"submit\"></form></div></body></html>"))
+}
+
+func ebpfTelemetryHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method == http.MethodPost {
+		bodyBytes, _ := io.ReadAll(r.Body)
+		logMsg := string(bodyBytes)
+		slog.Info("eBPF Ajanından Log Geldi!", "log", logMsg)
+		telemetry.LogEBPF(logMsg)
+		w.WriteHeader(http.StatusOK)
+	}
 }

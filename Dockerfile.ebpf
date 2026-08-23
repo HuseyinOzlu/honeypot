@@ -1,0 +1,14 @@
+FROM rust:1-bullseye AS builder
+WORKDIR /app
+
+COPY cmd/ebpf-agent/ ./
+
+RUN cargo build --release
+
+FROM debian:bullseye-slim
+WORKDIR /app
+
+COPY --from=builder /app/target/release/ebpf-agent .
+COPY --from=builder /app/ebpf-agent-ebpf/target/bpfel-unknown-none/release/ebpf-agent-ebpf ./ebpf-agent-ebpf/target/bpfel-unknown-none/release/ebpf-agent-ebpf
+
+CMD ["./ebpf-agent"]

@@ -10,6 +10,16 @@ services:
       - CLICKHOUSE_PASSWORD=123456
     volumes:
       - clickhouse_data:/var/lib/clickhouse
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 1G
 
   vfs:
     build:
@@ -19,6 +29,10 @@ services:
     ports:
       - "5000:5000"
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
 
   gateway:
     build:
@@ -36,9 +50,35 @@ services:
       # Fallback logları Windows masaüstüne düşsün diye volume bağlıyoruz:
       - ./logs:/app/logs
     depends_on:
-      - clickhouse
-      - vfs
+      clickhouse:
+        condition: service_healthy
+      vfs:
+        condition: service_started
     restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  ebpf-agent:
+    build:
+      context: .
+      dockerfile: Dockerfile.ebpf
+    container_name: honeypot_ebpf
+    privileged: true
+    pid:  "host" # Sistemdeki sahte Ubuntu dahil tüm konteynerleri dinlemesi için Host PID izni
+    environment:
+      - RUST_LOG=info
+    volumes:
+    - /sys/kernel/debug:/sys/kernel/debug:ro
+    depends_on:
+      clickhouse:
+        condition: service_healthy
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 256M
 
 volumes:
   clickhouse_data:

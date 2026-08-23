@@ -54,12 +54,32 @@ func InitClickhouse(addr string, password string) error {
 		ORDER BY timestamp;
 	`)
 
+	err = DB.Exec(context.Background(),`
+		CREATE TABLE IF NOT EXISTS ebpf_logs (
+			log String,
+			timestamp DateTime
+		) ENGINE = MergeTree()
+		ORDER BY timestamp;
+	`)
+
 	if err != nil {
 		return err
 	}
 
 	log.Println("Clickhouse aktif ve tablolar hazır!")
 	return nil
+}
+
+func LogEBPF(logMsg string) {
+	go func(msg string) {
+		err := DB.Exec(context.Background(),
+			"INSERT INTO ebpf_logs (log, timestamp) VALUES (?, now())",
+			msg,
+		)
+		if err != nil {
+			log.Printf("EBPF Log ClickHouse'a yazılamadı: %v", err)
+		}
+	}(logMsg)
 }
 
 func LogCommand(event CommandEvent) {
