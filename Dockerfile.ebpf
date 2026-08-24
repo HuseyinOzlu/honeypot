@@ -1,14 +1,21 @@
-FROM rust:1-bullseye AS builder
+FROM golang:1.23-bullseye AS builder
+
 WORKDIR /app
 
+RUN apt-get update && apt-get install -y clang llvm libbpf-dev linux-libc-dev && ln -s /usr/include/x86_64-linux-gnu/asm /usr/include/asm || true && ln -s /usr/bin/llvm-strip-11 /usr/bin/llvm-strip || true
 COPY cmd/ebpf-agent/ ./
 
-RUN cargo build --release
+RUN go mod init ebpf-agent && go get github.com/cilium/ebpf/link@v0.16.0 github.com/cilium/ebpf/ringbuf@v0.16.0 github.com/cilium/ebpf/rlimit@v0.16.0 github.com/cilium/ebpf/cmd/bpf2go@v0.16.0 && go mod tidy
+
+#? Transport Go Objects after C code run (bpf2go)
+RUN go generate ./...
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /bin/ebpf-agent .
 
 FROM debian:bullseye-slim
+
 WORKDIR /app
 
-COPY --from=builder /app/target/release/ebpf-agent .
-COPY --from=builder /app/ebpf-agent-ebpf/target/bpfel-unknown-none/release/ebpf-agent-ebpf ./ebpf-agent-ebpf/target/bpfel-unknown-none/release/ebpf-agent-ebpf
+COPY --from=builder /bin/ebpf-agent .
 
 CMD ["./ebpf-agent"]

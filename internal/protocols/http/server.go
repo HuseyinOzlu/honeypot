@@ -1,6 +1,7 @@
 package http
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"log/slog"
@@ -41,6 +42,8 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		if payload == "" && r.Body != nil {
 			bodyBytes, _ := io.ReadAll(r.Body)
 			payload = string(bodyBytes)
+			// Body'i okuduktan sonra yerine yeni bir okuyucu koyuyoruz ki sonraki fonksiyonlar da okuyabilsin
+			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
 		event := telemetry.HTTPEvent{
