@@ -6,12 +6,10 @@ struct event_t {
     char comm[64]; 
 };
 
-struct bpf_map_def SEC("maps") events = {
-    .type = BPF_MAP_TYPE_RINGBUF,
-    .max_entries = 256 * 1024,
-    .key_size = 0,
-    .value_size = 0,
-};
+struct {
+    __uint(type, BPF_MAP_TYPE_RINGBUF);
+    __uint(max_entries, 256 * 1024);
+} events SEC(".maps");
 
 struct execve_args {
     unsigned short common_types;
