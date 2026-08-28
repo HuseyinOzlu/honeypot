@@ -28,7 +28,9 @@ jobs:
         go build -v -o bin/gateway ./cmd/gateway
         go build -v -o bin/ebpf-agent ./cmd/ebpf-agent
     - name: Run Unit Tests
-      run: go test -v ./...
+      env:
+        GOTOOLCHAIN: auto
+      run: go test -v -coverpkg=./... ./...
 
   docker-build:
     name: Build Docker Images
