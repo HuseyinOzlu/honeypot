@@ -30,7 +30,6 @@ def start_rpc_server(host: str = "0.0.0.0", port: int = 6000):
                     data = client_sock.recv(4096).decode("utf-8").strip()
                     if not data:
                         break
-                    
                     req = json.loads(data)
                     token = req.get("token", "")
                     if token != "HoneypotSuperSecretToken123!":

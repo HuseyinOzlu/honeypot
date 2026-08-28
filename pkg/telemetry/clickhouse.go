@@ -123,3 +123,85 @@ func LogHTTP(event HTTPEvent) {
 		}
 	}(event)
 }
+//? HTTPLog struct for retrieving HTTP logs
+type HTTPLog struct {
+	IPAddress string `json:"ip_address"`
+	Method	  string `json:"method"`
+	Path      string `json:"path"`
+	UserAgent string `json:"user_agent"`
+	Payload	  string `json:"payload"`
+	Timestamp string `json:"timestamp"`
+}
+
+//? CommandLog struct for retrieving Command Logs
+type CommandLog struct {
+	SessionID string `json:"session_id"`
+	IPAddress string `json:"ip_address"`
+	Username  string `json:"username"`
+	Command   string `json:"command"`
+	Output    string `json:"output"`
+	Timestamp string `json:"timestamp"`
+}
+
+//? EBPFLog struct for retrieving eBPF logs
+type EBPFLog struct {
+	Log       string `json:"log"`
+	Timestamp string `json:"timestamp"`
+}
+
+//? GetHTTPLogs retrieves the latest HTTP logs from ClickHouse
+func GetHTTPLogs(limit int) ([]HTTPLog, error) {
+	rows, err := DB.Query(context.Background(), "SELECT ip_address, method, path, user_agent, payload, toString(timestamp) FROM http_logs ORDER BY timestamp DESC LIMIT ?", limit)
+	if err != nil {
+		return nil ,err
+	}
+	defer rows.Close()
+
+	var logs []HTTPLog
+	for rows.Next() {
+		var l HTTPLog
+		if err := rows.Scan(&l.IPAddress, &l.Method, &l.Path, &l.UserAgent, &l.Payload, &l.Timestamp); err != nil {
+			return nil, err
+		}
+		logs = append(logs, l)
+	}
+	return logs, nil
+}
+
+//? GetCommandLogs retrieves the latest Command logs from ClickHouse
+func GetCommandLogs(limit int) ([]CommandLog, error) {
+	rows, err := DB.Query(context.Background(), "SELECT session_id, ip_address, username, command, output, toString(timestamp) FROM command_logs ORDER BY timestamp DESC LIMIT ?", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs []CommandLog
+	for rows.Next() {
+		var l CommandLog
+		if err := rows.Scan(&l.SessionID, &l.IPAddress, &l.Username, &l.Command, &l.Output, &l.Timestamp); err != nil {
+			return nil, err
+		}
+		logs = append(logs, l)
+	}
+	return logs, nil
+}
+
+//? GetEBPFLogs retrieves the latest eBPF logs from ClickHouse
+func GetEBPFLogs(limit int) ([]EBPFLog, error) {
+	rows, err := DB.Query(context.Background(), "SELECT log, toString(timestamp) FROM ebpf_logs ORDER BY timestamp DESC LIMIT ?", limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var logs [] EBPFLog
+	for rows.Next() {
+		var l EBPFLog
+		if err := rows.Scan(&l.Log, &l.Timestamp); err != nil {
+			return nil, err
+		}
+		logs = append(logs, l)
+	}
+	return logs, nil
+}

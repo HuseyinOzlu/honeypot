@@ -1,0 +1,120 @@
+definitions:
+  telemetry.CommandLog:
+    properties:
+      command:
+        type: string
+      ip_address:
+        type: string
+      output:
+        type: string
+      session_id:
+        type: string
+      timestamp:
+        type: string
+      username:
+        type: string
+    type: object
+  telemetry.EBPFLog:
+    properties:
+      log:
+        type: string
+      timestamp:
+        type: string
+    type: object
+  telemetry.HTTPLog:
+    properties:
+      ip_address:
+        type: string
+      method:
+        type: string
+      path:
+        type: string
+      payload:
+        type: string
+      timestamp:
+        type: string
+      user_agent:
+        type: string
+    type: object
+info:
+  contact: {}
+paths:
+  /api/v1/health:
+    get:
+      description: Checks if the Gateway and Database are running
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Check System Health
+      tags:
+      - system
+  /api/v1/logs/ebpf:
+    get:
+      description: Retrieves the latest eBPF logs captured by the honeypot
+      parameters:
+      - default: 50
+        description: Number of logs to retrieve
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/telemetry.EBPFLog'
+            type: array
+      summary: Get eBPF Kernel Logs
+      tags:
+      - logs
+  /api/v1/logs/http:
+    get:
+      description: Retrieves the latest HTTP logs captured by the honeypot
+      parameters:
+      - default: 50
+        description: Number of logs to retrieve
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/telemetry.HTTPLog'
+            type: array
+      summary: Get HTTP Logs
+      tags:
+      - logs
+  /api/v1/logs/ssh:
+    get:
+      description: Retrieves the latest eBPF logs captured by the honeypot
+      parameters:
+      - default: 50
+        description: Number of logs to retrieve
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/telemetry.CommandLog'
+            type: array
+      summary: Get SSH Command Logs
+      tags:
+      - logs
+swagger: "2.0"

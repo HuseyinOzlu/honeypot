@@ -9,6 +9,10 @@ RUN go mod download || true
 
 COPY . .
 
+#? For Swagger
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+RUN swag init -d cmd/gateway,internal/api/handlers,pkg/telemetry
+
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/gateway ./cmd/gateway
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/session-manager ./cmd/session-manager || true
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o /bin/telemetry-collector ./cmd/telemetry-collector || true

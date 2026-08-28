@@ -1,0 +1,47 @@
+name: Honeypot CI/CD
+
+on:
+    push:
+        branches: ["main", "master"]
+    pull_request:
+        branches: ["main", "master"]
+
+jobs:
+  build-and-test:
+    name: Build & Test Go Services
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Set up Go
+      uses: actions/setup-go@v4
+      with:
+        go-version: '1.23'
+    - name: Install libbpf-dev
+      run: sudo apt-get update && sudo apt-get install -y libbpf-dev clang llvm linux-libc-dev
+    - name: Download Go dependencies
+      run: go mod download
+    - name: Go Generate (eBPF Agent)
+      run: go generate ./cmd/ebpf-agent/...
+    - name: Build Go Services
+      run: |
+        go build -v -o bin/gateway ./cmd/gateway
+        go build -v -o bin/ebpf-agent ./cmd/ebpf-agent
+    - name: Run Unit Tests
+      run: go test -v -cover ./...
+        
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+    - name: Build Gateway Image
+      run: docker build -t honeypot-gateway -f Dockerfile .
+      
+    - name: Build eBPF Agent Image
+      run: docker build -t honeypot-ebpf-agent -f Dockerfile.ebpf .
+    - name: Build VFS Image
+      run: docker build -t honeypot-vfs -f Dockerfile.vfs .
+

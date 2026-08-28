@@ -1,0 +1,4 @@
+FROM ubuntu:latest
+
+RUN apt-get update && apt-get install -y net-tools iproute2 curl wget iputils-ping
+CMD ["/bin/bash"]

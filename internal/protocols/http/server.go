@@ -8,12 +8,15 @@ import (
 	"net/http"
 	"time"
 
+	_ "github.com/HuseyinOzlu/honeypot/docs"
+	"github.com/HuseyinOzlu/honeypot/internal/api/handlers"
 	"github.com/HuseyinOzlu/honeypot/pkg/telemetry"
+	httpSwagger "github.com/swaggo/http-swagger"
 )
 
 func StartServer(port string) {
 	mux := http.NewServeMux()
-
+	//? Fake Endpointler
 	mux.HandleFunc("/", indexHandler)
 	mux.HandleFunc("/robots.txt", robotsHandler)
 	mux.HandleFunc("/.git/config", gitConfigHandler)
@@ -22,11 +25,23 @@ func StartServer(port string) {
 	mux.HandleFunc("/login", adminLoginHandler)
 	mux.HandleFunc("/phpmyadmin", pmaLoginHandler)
 	mux.HandleFunc("/phpmyadmin/", pmaLoginHandler)
+
+	//? eBPF Data Accept EndPoint
 	mux.HandleFunc("/api/telemetry/ebpf", ebpfTelemetryHandler)
 
+	//? REST API (Swagger EndPoints)
+	mux.HandleFunc("/api/v1/health", handlers.SystemHealth)
+	mux.HandleFunc("/api/v1/logs/http", handlers.GetHTTPLogs)
+	mux.HandleFunc("/api/v1/logs/ssh", handlers.GetCommandLogs)
+	mux.HandleFunc("/api/v1/logs/ebpf", handlers.GetEBPFLogs)
+
+	//? Swagger UI interface
+	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+
+	//? Middleware implent
 	loggedMux := loggingMiddleware(mux)
 
-	slog.Info("HTTP Honeypot Dinliyor", "port", port)
+	slog.Info("HTTP Sunucusu Dinliyor", "port", port)
 	err := http.ListenAndServe(":"+port, loggedMux)
 	if err != nil {
 		slog.Error("HTTP Server Error", "error", err)
@@ -42,19 +57,25 @@ func loggingMiddleware(next http.Handler) http.Handler {
 		if payload == "" && r.Body != nil {
 			bodyBytes, _ := io.ReadAll(r.Body)
 			payload = string(bodyBytes)
-			// Body'i okuduktan sonra yerine yeni bir okuyucu koyuyoruz ki sonraki fonksiyonlar da okuyabilsin
+			//? Body'i okuduktan sonra yerine yeni bir okuyucu koyuyoruz ki sonraki fonksiyonlar da okuyabilsin
 			r.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
 		}
 
-		event := telemetry.HTTPEvent{
-			IPAddress: r.RemoteAddr,
-			Method:    r.Method,
-			Path:      r.URL.Path,
-			UserAgent: r.UserAgent(),
-			Payload:   payload,
-			Timestamp: time.Now(),
+		//? We don't be logging Own REST API and Swagger traffics (Only Hacker's traffics)
+		isAPI := len(r.URL.Path) >= 5 && r.URL.Path[:5] == "/api/"
+		isSwagger := len(r.URL.Path) >= 9 && r.URL.Path[:9] == "/swagger/"
+
+		if !isAPI && !isSwagger {
+			event := telemetry.HTTPEvent{
+				IPAddress: r.RemoteAddr,
+				Method: r.Method,
+				Path: r.URL.Path,
+				UserAgent: r.UserAgent(),
+				Payload: payload,
+				Timestamp: time.Now(),
+			}
+			telemetry.LogHTTP(event)
 		}
-		telemetry.LogHTTP(event)
 
 		slog.Info("HTTP Isteği", "ip", r.RemoteAddr, "method", r.Method, "path", r.URL.Path)
 
@@ -65,7 +86,18 @@ func loggingMiddleware(next http.Handler) http.Handler {
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
 		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, "<!DOCTYPE html><html><head><title>404 Not Found</title></head><body><h1>Not Found</h1><p>The requested URL was not found on this server.</p><hr><address>Apache/2.4.41 (Ubuntu) Server at localhost Port 8080</address></body></html>")
+		fmt.Fprintf(w, `<!DOCTYPE html>
+		<html>
+			<head>
+				<title>404 Not Found</title>
+			</head>
+			<body>
+				<h1>Not Found</h1>
+				<p>The requested URL was not found on this server.</p>
+				<hr>
+				<address>Apache/2.4.41 (Ubuntu) Server at localhost Port 8080</address>
+			</body>
+		</html>`)
 		return
 	}
 	html := "<!DOCTYPE html><html><head><title>Apache2 Ubuntu Default Page: It works</title><style>body { font-family: sans-serif; background-color: #f0f0f0; margin: 40px; } .card { background: white; padding: 20px; border: 1px solid #ccc; border-top: 5px solid #2e7d32; } h1 { color: #2e7d32; }</style></head><body><div class=\"card\"><h1>Apache2 Ubuntu Default Page</h1><h3>It works!</h3><p>This is the default welcome page used to test the correct operation of the Apache2 server after installation on Ubuntu systems.</p></div></body></html>"

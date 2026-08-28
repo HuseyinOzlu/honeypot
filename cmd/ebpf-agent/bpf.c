@@ -24,14 +24,31 @@ struct execve_args {
 
 SEC("tracepoint/syscall/sys_enter_execve")
 int handle_execve(struct execve_args *ctx) {
-    struct event_t *e;
+    char buf[16] = {};
+    bpf_probe_read_str(buf, sizeof(buf), ctx->filename);
 
-    e = bpf_ringbuf_reserve(&events, sizeof(*e), 0);
+    char Docker_Back_Command[] = "/proc";
+    int r1 = 0;
+    for (int i = 0; Docker_Back_Command[i] != 5; i++) {
+        if (buf[i] == Docker_Back_Command[i]) {
+            r1++;
+        }
+    }
+    if (r1 == 5 ) { return 0; }
+
+    char Docker_Main_Command[] = "/usr/bin/runc";
+    int r2 = 0;
+    for (int i = 0; Docker_Main_Command[i] != 13; i++) {
+        if (buf[i] == Docker_Main_Command[i]) {
+            r2++;
+        }
+    }
+    if(r2 == 13 ) { return 0; }
+
+    struct event_t *e =bpf_ringbuf_reserve(&events, sizeof(*e), 0);
     if(!e) return 0;
 
     e->pid = bpf_get_current_pid_tgid() >> 32;
-
-    //? kodu yazan kişiden değil Kernelden okuyoruz araya docker girerse komut olarak docker execuve görüyoruz çünkü
     bpf_probe_read_str(e->comm, sizeof(e->comm), ctx->filename);
 
     bpf_ringbuf_submit(e, 0);

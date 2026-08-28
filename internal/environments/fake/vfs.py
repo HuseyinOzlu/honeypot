@@ -61,7 +61,7 @@ class VirtualFileSystem:
             return f"ls: cannot access '{path}': No such file or directory\n"
         if node.get("type") == "file":
             return f"{path}\n"
-        
+
         output: List[str] = []
         for name, item in node.get("children", {}).items():
             perm = item.get("permissions", "-rw-r--r--" if item.get("type") == "file" else "drwxr-xr-x")

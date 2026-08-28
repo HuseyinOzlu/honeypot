@@ -27,22 +27,22 @@ func NewDockerEnvironment() (*DockerEnvironment, error) {
 	// Docker daemon ayakta mı diye Ping atıyoruz
 	_, err = cli.Ping(context.Background())
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
-	
+
 	return &DockerEnvironment{cli: cli}, nil
 }
 
 func (d *DockerEnvironment) CreateSession(ctx context.Context, cfg protocol.SessionConfig) (string, error) {
 	resp, err := d.cli.ContainerCreate(ctx,
 	&container.Config{
-		Image:			"ubuntu:latest",
+		Image:			"honeypot-victim:latest",
 		Cmd:			[]string{"/bin/bash"},
 		Tty: 			true,
 		AttachStdin: 	true,
 		AttachStdout: 	true,
 		AttachStderr: 	true,
-		OpenStdin: 		true,		
+		OpenStdin: 		true,
 	},
 	&container.HostConfig{
 		NetworkMode: "none", //internet çıkışı kestik
@@ -60,7 +60,7 @@ func (d *DockerEnvironment) CreateSession(ctx context.Context, cfg protocol.Sess
 	if err != nil {
 	return "", err
 	}
-	return resp.ID, nil 
+	return resp.ID, nil
 }
 
 // SSH isteğini Konteynere bağlamak için
@@ -78,14 +78,14 @@ func (d *DockerEnvironment) AttachStream(ctx context.Context, sessionID string, 
 		return err
 	}
 	defer resp.Close()
-	
-	// Stdin (SSH'den gelenler) arka planda Docker'a aksın
+
+	//? Stdin (SSH'den gelenler) arka planda Docker'a aksın
 	go io.Copy(resp.Conn, stdin)
-	
-	// Docker'ın çıktısı direkt kullanıcıya aksın. 
-	// Hacker "exit" yazdığında bash kapanır, Reader EOF döner ve fonksiyon biter!
+
+	//? Docker'ın çıktısı direkt kullanıcıya aksın.
+	//? Hacker "exit" yazdığında bash kapanır, Reader EOF döner ve fonksiyon biter!
 	io.Copy(stdout, resp.Reader)
-	
+
 	return nil
 }
 

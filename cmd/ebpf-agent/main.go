@@ -81,8 +81,13 @@ func main() {
 		if err := binary.Read(bytes.NewReader(record.RawSample), binary.LittleEndian, &event); err != nil {
 			continue
 		}
+		n := bytes.IndexByte(event.Comm[:],0)
+		if n == -1 {
+			n = len(event.Comm)
+		}
 
-		command := string(bytes.TrimRight(event.Comm[:], "\x00"))
+		command := string(event.Comm[:n])
+
 		logMsg := fmt.Sprintf("BINGO: [PID: %d] Komut: %s", event.PID, command)
 		log.Println("YAKALNDI:", logMsg)
 

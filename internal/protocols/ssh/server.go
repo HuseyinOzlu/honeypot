@@ -25,7 +25,6 @@ import (
 	"golang.org/x/crypto/ssh"
 )
 
-// TODO: Ağ güvenliği protokollerini buraya entegre etmeye çalışacağım,SSH handshake,
 type Server struct {
 	hostSigner ssh.Signer
 }
@@ -95,7 +94,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 					}
 				}
 			}(request)
-			
+
 			var env environments.Environment
 
 			env, err = docker.NewDockerEnvironment()
@@ -105,7 +104,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 				env, err = ai.NewAIEnvironment(AppConfig.AIFallback.APIKey)
 				if err != nil {
 					log.Printf("AI motoru da çöktü (%v), Fallback 2: Python VFS devrede!", err)
-					
+
 					env = fake.NewFakeEnvironment(AppConfig.PythonVFS.Address)
 					if env == nil { 
 						channel.Write([]byte("\r\nSistemde kritik bir arıza var. Bağlantı kesiliyor.\r\n"))
@@ -116,20 +115,20 @@ func (s *Server) handleConnection(conn net.Conn) {
 			}
 			hackerIP := sshConn.RemoteAddr().String() // Örn: 192.168.1.15:54321
 			hackerUser := sshConn.User()
-			
+
 			ctx := context.WithValue(context.Background(), "hacker_ip", hackerIP)
 			ctx = context.WithValue(ctx, "hacker_user", hackerUser)
 
 			uniqueSessionID := fmt.Sprintf("sess-%d", time.Now().UnixNano())
 
-				
+
 			sessionCfg := protocol.SessionConfig{} 
 			uniqueSessionID, err = env.CreateSession(ctx, sessionCfg)
 			if err != nil {
 				log.Printf("Konteyner yaratılamadı: %v", err)
 			}
 
-			// Gerçekçi bir Ubuntu Karşılama (MOTD) Mesajı
+			//? Gerçekçi bir Ubuntu Karşılama (MOTD) Mesajı
 			welcomeMsg := "\r\nWelcome to Ubuntu 22.04.4 LTS (GNU/Linux 5.15.0-101-generic x86_64)\r\n\r\n" +
 				" * Documentation:  https://help.ubuntu.com\r\n" +
 				" * Management:     https://landscape.canonical.com\r\n" +
@@ -139,7 +138,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 			
 			channel.Write([]byte(welcomeMsg))
 			
-			// Docker'a "Enter" tuşuna basılmış gibi bir sinyal (newline) göndererek bash prompt'un hemen çıkmasını sağlıyoruz
+			//? Docker'a "Enter" tuşuna basılmış gibi bir sinyal (newline) göndererek bash prompt'un hemen çıkmasını sağlıyoruz
 			simulatedEnter := strings.NewReader("\n")
 			injectedStdin := io.MultiReader(simulatedEnter, channel)
 
