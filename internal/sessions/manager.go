@@ -38,7 +38,7 @@ func (m *Manager) CreateSession(ctx context.Context, cfg protocol.SessionConfig)
 
 	vmID, err := env.CreateSession(ctx, cfg)
 	if err != nil {
-		return nil, fmt.Errorf(GetMsg(KeyEnvSessionFailed), err)
+		return nil, fmt.Errorf("%s %v", GetMsg(KeyEnvSessionFailed), err)
 	}
 
 	session := &Session{
@@ -65,7 +65,7 @@ func (m *Manager) TerminateSession(ctx context.Context, sessionID string) error 
 
 	session, exists := m.sessions[sessionID]
 	if !exists {
-		return fmt.Errorf(GetMsg(KeySessionsNotFound), sessionID)
+		return fmt.Errorf("%s %s", GetMsg(KeySessionsNotFound), sessionID)
 	}
 
 	now := time.Now().UTC()
