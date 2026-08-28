@@ -40,7 +40,7 @@ func (f *FakeEnvironment) AttachStream(ctx context.Context, sessionID string, st
 	conn, err := net.Dial("tcp", f.rpcAddress)
 	if err != nil {
 		errors.LogError(GetMsg(KeyPyVFSError), err)
-		return fmt.Errorf(GetMsg(KeyVFSOffline))
+		return fmt.Errorf("%s", GetMsg(KeyVFSOffline))
 	}
 	defer conn.Close()
 
