@@ -18,7 +18,7 @@ jobs:
       with:
         go-version: '1.23'
     - name: Install libbpf-dev
-      run: sudo apt-get update && sudo apt-get install -y libbpf-dev clang llvm linux-libc-dev
+      run: sudo apt-get update && sudo apt-get install -y libbpf-dev clang llvm linux-libc-dev gcc-multilib
     - name: Download Go dependencies
       run: go mod download
     - name: Go Generate (eBPF Agent)
