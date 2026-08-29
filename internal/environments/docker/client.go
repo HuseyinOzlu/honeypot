@@ -132,10 +132,22 @@ func NewDockerEnvironment() (*DockerEnvironment, error) {
 }
 
 func (d *DockerEnvironment) CreateSession(ctx context.Context, cfg protocol.SessionConfig) (string, error) {
+	runUser := cfg.Username
+	if runUser == ""{
+		runUser = "root"
+	}
+
+	supportedUser := map[string]bool{"root": true, "ubuntu": true, "admin": true, "guest": true}
+	if !supportedUser[runUser] {
+		runUser = "guest"
+	}
+
+	cmdStr := []string{"su", "-", runUser}
+
 	resp, err := d.cli.ContainerCreate(ctx,
 	&container.Config{
 		Image:			"honeypot-victim:latest",
-		Cmd:			[]string{"/bin/bash"},
+		Cmd:			cmdStr,
 		Tty: 			true,
 		AttachStdin: 	true,
 		AttachStdout: 	true,
@@ -148,7 +160,6 @@ func (d *DockerEnvironment) CreateSession(ctx context.Context, cfg protocol.Sess
 			Memory: 256 * 1024 * 1024, // max: 256 MB RAM
 			PidsLimit: func() *int64 { i := int64(50); return &i} (), // Fork bomb engeli
 		},
-		CapDrop: []string{"ALL"},
 	},
 	&network.NetworkingConfig{},
 	nil,

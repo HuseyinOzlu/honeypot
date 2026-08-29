@@ -32,12 +32,13 @@ const (
 	KeyVFSOffline					MessageKey = "VFS_OFFLINE"
 	// INFO:
 	//		pkg/errors/:
-	KeyErrorMessage				 	MessageKey = "ERROR_MESSAGES" 
+	KeyErrorMessage				 	MessageKey = "ERROR_MESSAGES"
 	//		internal/protocols/ssh/:
 	KeySSHHoneypotListening 	 	MessageKey = "SSH_LISTENING"
 	KeyClientConnected      	 	MessageKey = "CLIENT_CONNECTED"
 	KeyConnectionCatched    	 	MessageKey = "NEW_CONNECTION_CATCHED"
 	KeyFakeSSHKey           	 	MessageKey = "FAKE_SSH_KEY_GENERATED"
+	KeyLoginTrying					MessageKey = "LOGIN_TRYİNG"
 	// 		cmd/gateway/:
 	KeyStartingGateway      	 	MessageKey = "STARTING_GATEWAY_SERVICE"
 	KeyListeningGateway     	 	MessageKey = "GATEWAY_LISTENING"
@@ -93,6 +94,7 @@ var Messages = map[Language]map[MessageKey]string{
 		KeySSHHoneypotListening: 		"SSH Honeypot portunda dinleniyor",
 		KeyFakeSSHKey:           		"Sahte SSH kimlik Kartı (RSA 2048) bellekte Üretiliyor...",
 		KeyClientConnected:      		"Yeni TCP bağlantısı yakalandı",
+		KeyLoginTrying:					"Login bağlantısı denendi",
 		//		cmd/telemetry-collector/:
 		KeyStartingeBPFLog:       		"Yüksek Verimli eBPF ve Log toplama servisi başlıyor..",
 		KeyTelemetryPPLListening: 		"Telemetri Veri Akışı gRPC (50052 portunda) dinleniyor ve CliclkHouse veritabanına bağlandı",
@@ -139,6 +141,7 @@ var Messages = map[Language]map[MessageKey]string{
 		KeySSHHoneypotListening: 		"SSH Listening of Honeypot Port",
 		KeyClientConnected:      		"New TCP connection established",
 		KeyFakeSSHKey:           		"A Fake SSH key(RSA 2048) is being in memory... ",
+		KeyLoginTrying:					"Trying new login",
 		//		cmd/telemetry-collector
 		KeyStartingeBPFLog:       		"Starting High-Throughput eBPF Telemetry & Log Collector Service...",
 		KeyTelemetryPPLListening: 		"Telemetry pipeline listening on gRPC port 50052 and connected to ClickHouse buffer",

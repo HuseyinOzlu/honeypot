@@ -43,6 +43,9 @@ func StartServer(port string) {
 	//? Swagger UI interface
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
 
+	//? Server-Sent Events(live action data)
+	mux.HandleFunc("GET /api/v1/stream/logs", handlers.StreamLogs)
+
 	//? Middleware implent
 	loggedMux := loggingMiddleware(mux)
 

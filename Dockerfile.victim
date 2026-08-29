@@ -1,4 +1,31 @@
-FROM ubuntu:latest
+FROM ubuntu:22.04
 
-RUN apt-get update && apt-get install -y net-tools iproute2 curl wget iputils-ping
+RUN yes | unminimize
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    #? Sistem Yönetimi ve Dökümantasyon
+    sudo cron rsyslog logrotate man-db manpages manpages-dev less bash-completion tree tmux screen \
+    #? Network Araçları (Hackerların en çok aradığı araçlar)
+    curl wget net-tools iproute2 iputils-ping traceroute dnsutils nmap tcpdump netcat iptables ufw openssh-client openssh-server socat rsync whois bind9-host \
+    #? Geliştirme ve Derleme (Exploit denemeleri için şart)
+    build-essential python3 python3-pip git make gcc g++ perl ruby golang \
+    #? Editörler
+    nano vim ed \
+    #? Sistem İzleme ve Analiz
+    htop psmisc lsof strace ltrace file bc sysstat procps \
+    #? Arşivleme ve Veritabanı
+    tar gzip unzip zip bzip2 xz-utils jq sqlite3 && \
+    #? Temizlik
+    rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -s /bin/bash ubuntu && echo "ubuntu:ubuntu"  | chpasswd && usermod -aG sudo ubuntu
+RUN useradd -m -s /bin/bash admin && echo "admin:admin123" | chpasswd && usermod -aG sudo admin
+RUN useradd -m -s /bin/bash guest && echo "guest:guest" | chpasswd
+
+RUN mkdir -p /var/www/html && echo "<h1>Production Server (Internal)</h1>" > /var/www/html/index.html && \ 
+echo "<?php  / TODO: Remove DB credentials before production\n\$db_pass = 'super_secret_db_pass';"
+
+RUN echo "*/5 * * * * root /root/backup.sh" >> /etc/crontab
+
+RUN mkdir -p /root/.ssh && ssh-keygen -t rsa -b 4096 -f /root/.ssh/id_rsa -N "" -q
 CMD ["/bin/bash"]

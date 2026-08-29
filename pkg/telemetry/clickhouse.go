@@ -75,6 +75,9 @@ func InitClickhouse(addr string, password string) error {
 }
 
 func LogEBPF(logMsg string) {
+	GetBroker().Broadcast("ebpf_event", map[string]string{
+		"log": logMsg,
+	})
 	go func(msg string) {
 		err := DB.Exec(context.Background(),
 			"INSERT INTO ebpf_logs (log, timestamp) VALUES (?, now())",
@@ -87,6 +90,7 @@ func LogEBPF(logMsg string) {
 }
 
 func LogCommand(event CommandEvent) {
+	GetBroker().Broadcast("ssh_command", event)
 	go func(e CommandEvent) {
 		err := DB.Exec(context.Background(),
 			"INSERT INTO command_logs (session_id, ip_address, username, command, output, timestamp) VALUES (?, ?, ?, ?, ?, ?)",
@@ -117,6 +121,7 @@ func writeFallbackLog(event CommandEvent){
 }
 
 func LogHTTP(event HTTPEvent) {
+	GetBroker().Broadcast("http_request", event)
 	go func(e HTTPEvent) {
 		err := DB.Exec(context.Background(),
 			"INSERT INTO http_logs (ip_address, method, path, user_agent, payload, timestamp) VALUES (?, ?, ?, ?, ?, ?)",

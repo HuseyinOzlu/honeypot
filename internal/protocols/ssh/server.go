@@ -19,7 +19,7 @@ import (
 	"github.com/HuseyinOzlu/honeypot/internal/environments/docker"
 	"github.com/HuseyinOzlu/honeypot/internal/environments/fake"
 	. "github.com/HuseyinOzlu/honeypot/pkg/config"
-	. "github.com/HuseyinOzlu/honeypot/pkg/constants" 
+	. "github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"github.com/HuseyinOzlu/honeypot/pkg/errors"
 	"github.com/HuseyinOzlu/honeypot/pkg/protocol"
 	"golang.org/x/crypto/ssh"
@@ -65,8 +65,25 @@ func (s *Server) handleConnection(conn net.Conn) {
 	defer conn.Close()
 	config := &ssh.ServerConfig{
 		PasswordCallback: func(c ssh.ConnMetadata, pass []byte) (*ssh.Permissions, error) {
-			slog.Info(GetMsg(KeyTryingPasswd), "user", c.User(), "password", string(pass))
-			return nil, nil
+			user := c.User()
+			password := string(pass)
+			slog.Info("user", user, "password", password)
+
+			valid := false
+			switch user {
+			case "ubuntu":
+				if password == "ubuntu" { valid = true }
+			case "admin":
+				if password == "admin123" {valid = true}
+			case "guest":
+				if password == "guest" { valid = true }
+			case "root":
+				if password == "toor" || password == "root123" { valid = true }
+			}
+			if valid {
+			return nil, nil}
+
+			return nil, fmt.Errorf("password rejected")
 		},
 	}
 	config.AddHostKey(s.hostSigner)
@@ -106,7 +123,7 @@ func (s *Server) handleConnection(conn net.Conn) {
 					log.Printf("AI motoru da çöktü (%v), Fallback 2: Python VFS devrede!", err)
 
 					env = fake.NewFakeEnvironment(AppConfig.PythonVFS.Address)
-					if env == nil { 
+					if env == nil {
 						channel.Write([]byte("\r\nSistemde kritik bir arıza var. Bağlantı kesiliyor.\r\n"))
 						channel.Close()
 						return
@@ -122,7 +139,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 			uniqueSessionID := fmt.Sprintf("sess-%d", time.Now().UnixNano())
 
 
-			sessionCfg := protocol.SessionConfig{} 
+			sessionCfg := protocol.SessionConfig{
+				Username: hackerUser,
+			} 
 			uniqueSessionID, err = env.CreateSession(ctx, sessionCfg)
 			if err != nil {
 				log.Printf("Konteyner yaratılamadı: %v", err)
@@ -135,9 +154,9 @@ func (s *Server) handleConnection(conn net.Conn) {
 				" * Support:        https://ubuntu.com/advantage\r\n\r\n" +
 				"System information as of " + time.Now().Format("Mon Jan 02 15:04:05 UTC 2006") + "\r\n\r\n" +
 				"Last login: " + time.Now().Add(-24*time.Hour).Format("Mon Jan 02 15:04:05 2006") + " from 192.168.1.105\r\n"
-			
+
 			channel.Write([]byte(welcomeMsg))
-			
+
 			//? Docker'a "Enter" tuşuna basılmış gibi bir sinyal (newline) göndererek bash prompt'un hemen çıkmasını sağlıyoruz
 			simulatedEnter := strings.NewReader("\n")
 			injectedStdin := io.MultiReader(simulatedEnter, channel)
