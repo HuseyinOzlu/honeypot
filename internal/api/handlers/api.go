@@ -106,3 +106,81 @@ func parseLimit(r *http.Request, defaultLimit int) int {
 	}
 	return limit
 }
+
+// DeleteCommandLogs godoc
+// @Summary SSH komut loglarını temizler
+// @Description Tarih aralığı alırsa sadece o aralıktaki eğer Parametre almazsa veritabanındaki tüm Victim SSH komutlarını siler (Örn: 2026-08-01 00:00:00)
+// @Tags telemetry
+// @Produce json
+// @Param start_date query string false "Baslangic tarihi"
+// @Param end_date query string false "Bitis Tarihi"
+// @Success 200 {object} map[string]string
+// @Router /api/v1/telemetry/ssh [delete]
+func DeleteCommandLogs(w http.ResponseWriter, r *http.Request) {
+		startDate := r.URL.Query().Get("start_date")
+		endDate := r.URL.Query().Get("end_date")
+
+		var err error
+		if startDate != "" && endDate != "" {
+			err = telemetry.DeleteLogsByDateRange("command_logs", startDate, endDate)
+		} else {
+			err = telemetry.DeleteAllCommandLogs()
+		}
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "SSH komut logları temizlendi"})
+}
+
+// DeleteHTTPLogs godoc
+// @Summary HTTP loglarını temizler
+// @Description Tüm sahte web sunucusı (Honeypot) loglarını temizler
+// @Tags telemetry
+// @Produce json
+// @Param start_date query string false "Baslangic tarihi"
+// @Param end_date query string false "Bitis Tarihi"
+// @Success 200 {object} map[string]string
+// @Router /api/v1/telemetry/http [delete]
+func DeleteHTTPLogs(w http.ResponseWriter, r *http.Request) {
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+	var err error
+	if startDate != "" && endDate != "" {
+		err = telemetry.DeleteLogsByDateRange("http_logs", startDate, endDate)
+	} else {
+		err = telemetry.DeleteAllHTTPLogs()
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"status":"success", "message": "HTTP logları temizlendi"})
+}
+
+// DeleteEBPFLogs godoc
+// @Summary eBPF loglarını temizler
+// @Description Çekirdek seviyesindeki (kernel) tüm eBPF süreç loglarını siler
+// @Tags telemetry
+// @Produce json
+// @Param start_date query string false "Baslangic tarihi"
+// @Param end_date query string false "Bitis Tarihi"
+// @Success 200 {object} map[string]string
+// @Router /api/v1/telemetry/ebpf [delete]
+func DeleteEBPFLogs(w http.ResponseWriter, r *http.Request) {
+	startDate := r.URL.Query().Get("start_date")
+	endDate := r.URL.Query().Get("end_date")
+
+	var err error
+	if startDate != "" && endDate != "" {
+		err = telemetry.DeleteLogsByDateRange("ebpf_logs", startDate, endDate)
+	} else {
+		err = telemetry.DeleteAlleBPFLogs()
+	}
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	json.NewEncoder(w).Encode(map[string]string{"status":"success", "message":"Kernel seviyesinde'ki tüm eBPF logları temizlendi"})
+}

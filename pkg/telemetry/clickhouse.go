@@ -1,9 +1,12 @@
 package telemetry
+
 import (
 	"context"
-	"log"
 	"encoding/json"
+	"fmt"
+	"log"
 	"os"
+
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
@@ -36,7 +39,8 @@ func InitClickhouse(addr string, password string) error {
 			output String,
 			timestamp DateTime
 		) ENGINE = MergeTree()
-		ORDER BY (timestamp, session_id);
+		ORDER BY (timestamp, session_id)
+		TTL timestamp + INTERVAL 3 MONTH DELETE; -- Delete datad older than 3 months!
 	`)
 	if err != nil {
 		return err
@@ -204,4 +208,35 @@ func GetEBPFLogs(limit int) ([]EBPFLog, error) {
 		logs = append(logs, l)
 	}
 	return logs, nil
+}
+
+//? Delete all SSH logs
+func DeleteAllCommandLogs() error {
+	if DB == nil {
+		return nil
+	}
+	return DB.Exec(context.Background(), "TRUNCATE TABLE command_logs")
+}
+
+//? Delete all HTTP logs
+func DeleteAllHTTPLogs() error {
+	if DB == nil {
+		return nil
+	}
+	return DB.Exec(context.Background(), "TRUCATE TABLE http_logs")
+}
+
+//? Delete all eBPF Core
+func DeleteAlleBPFLogs() error {
+	if DB == nil {
+		return nil
+	}
+	return DB.Exec(context.Background(),"TRUCATE TABLE ebpg_logs")
+}
+
+//? Deletes data from the requested table according to the date range!
+func DeleteLogsByDateRange(tableName, startDate, endDate string) error {
+	if DB == nil {return nil}
+	query := fmt.Sprintf("ALTER TABLE %s DELETE WHERE timestamp >= parseDateTimeBestEffort('%s') AND timestamp <= parseDateTimeBestEffort('%s')", tableName, startDate, endDate)
+	return DB.Exec(context.Background(), query)
 }

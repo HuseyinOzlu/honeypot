@@ -26,23 +26,17 @@ int handle_execve(struct execve_args *ctx) {
     char buf[16] = {};
     bpf_probe_read_str(buf, sizeof(buf), ctx->filename);
 
-    char Docker_Back_Command[] = "/proc";
-    int r1 = 0;
-    for (int i = 0; Docker_Back_Command[i] != 5; i++) {
-        if (buf[i] == Docker_Back_Command[i]) {
-            r1++;
-        }
+    // Filter out /proc
+    if (buf[0] == '/' && buf[1] == 'p' && buf[2] == 'r' && buf[3] == 'o' && buf[4] == 'c') {
+        return 0;
     }
-    if (r1 == 5 ) { return 0; }
 
-    char Docker_Main_Command[] = "/usr/bin/runc";
-    int r2 = 0;
-    for (int i = 0; Docker_Main_Command[i] != 13; i++) {
-        if (buf[i] == Docker_Main_Command[i]) {
-            r2++;
-        }
+    // Filter out /usr/bin/runc
+    if (buf[0] == '/' && buf[1] == 'u' && buf[2] == 's' && buf[3] == 'r' && buf[4] == '/' && 
+        buf[5] == 'b' && buf[6] == 'i' && buf[7] == 'n' && buf[8] == '/' && 
+        buf[9] == 'r' && buf[10] == 'u' && buf[11] == 'n' && buf[12] == 'c') {
+        return 0;
     }
-    if(r2 == 13 ) { return 0; }
 
     struct event_t *e =bpf_ringbuf_reserve(&events, sizeof(*e), 0);
     if(!e) return 0;
