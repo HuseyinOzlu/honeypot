@@ -5,14 +5,17 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"os"
+	"regexp"
 
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/ClickHouse/clickhouse-go/v2/lib/driver"
 )
 
 var DB driver.Conn
-
+var ansiRegex = regexp.MustCompile(`[\x1b\x9b][\[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]|[\x1b\x9b]\][0-9;]*;.*?\x07`)
+var promptRegex = regexp.MustCompile(`[a-zA-Z0-9_-]+@[a-zA-Z0-9_-]+:.*?[\$#]\s*$`)
 
 func InitClickhouse(addr string, password string) error {
 	var err error
@@ -84,12 +87,16 @@ func LogEBPF(logMsg string) {
 			msg,
 		)
 		if err != nil {
-			log.Printf("EBPF Log ClickHouse'a yazılamadı: %v", err)
+			log.Printf(constants.GetMsg(constants.KeyEBPFWriteFailed), err)
 		}
 	}(logMsg)
 }
 
+
 func LogCommand(event CommandEvent) {
+	event.Output = ansiRegex.ReplaceAllString(event.Output, "")
+	event.Command = ansiRegex.ReplaceAllString(event.Command, "")
+	event.Output = promptRegex.ReplaceAllString(event.Output, "")
 	GetBroker().Broadcast("ssh_command", event)
 	go func(e CommandEvent) {
 		err := DB.Exec(context.Background(),
@@ -97,7 +104,7 @@ func LogCommand(event CommandEvent) {
 			e.SessionID,e.IPAddress,e.Username,e.Command,e.Output,e.Timestamp,
 		)
 		if err != nil {
-			log.Printf("ClickHouse'a ulaşılamıyor! Log diske yazılıyor hata: %v", err)
+			log.Printf(constants.GetMsg(constants.KeyClickHouseUnreachableFallbackDisk), err)
 			writeFallbackLog(e)
 		}
 	}(event)
@@ -106,12 +113,12 @@ func LogCommand(event CommandEvent) {
 func writeFallbackLog(event CommandEvent){
 	// Logs klasörü yoksa oluştur
 	if err := os.MkdirAll("/app/logs", 0755); err != nil {
-		log.Printf("HATA! logs klasörü oluşturulamadı: %v", err)
+		log.Printf(constants.GetMsg(constants.KeyLogsDirCreationFailed), err)
 	}
 
 	file, err := os.OpenFile("/app/logs/fallback_logs.json", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	if err != nil {
-		log.Printf("HATA! Veriler ClickHouse ve Diske'de yazılamadı: %v", err)
+		log.Printf(constants.GetMsg(constants.KeyAllLogWritesFailed), err)
 		return
 	}
 	defer file.Close()
@@ -128,7 +135,7 @@ func LogHTTP(event HTTPEvent) {
 			e.IPAddress, e.Method, e.Path, e.UserAgent, e.Payload, e.Timestamp,
 		)
 		if err != nil {
-			log.Printf("HTTP Log ClickHouse'a yazılamadı: %v", err)
+			log.Printf(constants.GetMsg(constants.KeyHTTPWriteFailed), err)
 		}
 	}(event)
 }

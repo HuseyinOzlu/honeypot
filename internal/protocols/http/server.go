@@ -6,6 +6,7 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"time"
 
 	_ "github.com/HuseyinOzlu/honeypot/docs"
@@ -49,10 +50,10 @@ func StartServer(port string) {
 	//? Middleware implent
 	loggedMux := loggingMiddleware(mux)
 
-	slog.Info("HTTP Sunucusu Dinliyor", "port", port)
+	slog.Info(constants.GetMsg(constants.KeyHTTPServerListening), "port", port)
 	err := http.ListenAndServe(":"+port, loggedMux)
 	if err != nil {
-		slog.Error("HTTP Server Error", "error", err)
+		slog.Error(constants.GetMsg(constants.KeyHTTPServerError), "error", err)
 	}
 }
 
@@ -85,7 +86,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 			telemetry.LogHTTP(event)
 		}
 
-		slog.Info("HTTP Isteği", "ip", r.RemoteAddr, "method", r.Method, "path", r.URL.Path)
+		slog.Info(constants.GetMsg(constants.KeyHTTPRequestCatched), "ip", r.RemoteAddr, "method", r.Method, "path", r.URL.Path)
 
 		next.ServeHTTP(w, r)
 	})
@@ -93,8 +94,7 @@ func loggingMiddleware(next http.Handler) http.Handler {
 
 func indexHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path != "/" {
-		w.WriteHeader(http.StatusNotFound)
-		fmt.Fprintf(w, `<!DOCTYPE html>
+		htmlResponse := fmt.Sprintf(`<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML 2.0//EN">
 		<html>
 			<head>
 				<title>404 Not Found</title>
@@ -103,9 +103,10 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 				<h1>Not Found</h1>
 				<p>The requested URL was not found on this server.</p>
 				<hr>
-				<address>Apache/2.4.41 (Ubuntu) Server at localhost Port 8080</address>
+				<address>Apache/2.4.41 (Ubuntu) Server at %s Port 80</address>
 			</body>
-		</html>`)
+		</html>`, r.Host)
+		w.Write([]byte(htmlResponse))
 		return
 	}
 	html := `
@@ -351,7 +352,7 @@ func ebpfTelemetryHandler(w http.ResponseWriter, r *http.Request) {
 	if r.Method == http.MethodPost {
 		bodyBytes, _ := io.ReadAll(r.Body)
 		logMsg := string(bodyBytes)
-		slog.Info("eBPF Ajanından Log Geldi!", "log", logMsg)
+		slog.Info(constants.GetMsg(constants.KeyEBPFLogReceived), "log", logMsg)
 		telemetry.LogEBPF(logMsg)
 		w.WriteHeader(http.StatusOK)
 	}

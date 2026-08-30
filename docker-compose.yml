@@ -86,5 +86,20 @@ services:
         limits:
           memory: 256M
 
+  admin-panel:
+    build:
+      context: ./admin-panel
+      dockerfile: Dockerfile
+    container_name: honeypot_admin_panel
+    ports:
+      - "3000:3000"
+    depends_on:
+      - gateway
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
 volumes:
   clickhouse_data:

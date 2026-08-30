@@ -30,6 +30,22 @@ const (
 	//		internal/environment/fake/client.go
 	KeyPyVFSError					MessageKey = "PY_VFS_ERROR"
 	KeyVFSOffline					MessageKey = "VFS_OFFLINE"
+	//		cmd/gateway/:
+	KeyDBFailedFallback				MessageKey = "DB_FAILED_FALLBACK"
+	KeyConfigReadFailed				MessageKey = "CONFIG_READ_FAILED"
+	//		internal/environments/docker/
+	KeyContainerCreationFailed		MessageKey = "CONTAINER_CREATION_FAILED"
+	KeyDockerFailedFallbackAI		MessageKey = "DOCKER_FAILED_FALLBACK_AI"
+	KeyAIFailedFallbackVFS			MessageKey = "AI_FAILED_FALLBACK_VFS"
+	//		internal/protocols/http/
+	KeyHTTPServerError				MessageKey = "HTTP_SERVER_ERROR"
+	//		pkg/telemetry/clickhouse.go
+	KeyEBPFWriteFailed				MessageKey = "EBPF_WRITE_FAILED"
+	KeyClickHouseUnreachableFallbackDisk MessageKey = "CLICKHOUSE_UNREACHABLE_FALLBACK_DISK"
+	KeyLogsDirCreationFailed		MessageKey = "LOGS_DIR_CREATION_FAILED"
+	KeyAllLogWritesFailed			MessageKey = "ALL_LOG_WRITES_FAILED"
+	KeyHTTPWriteFailed				MessageKey = "HTTP_WRITE_FAILED"
+
 	// INFO:
 	//		pkg/errors/:
 	KeyErrorMessage				 	MessageKey = "ERROR_MESSAGES"
@@ -51,10 +67,15 @@ const (
 	KeyStartingSMAndOrchestrator 	MessageKey = "STARTING_SM_AND_ORCH"
 	KeyWarmPoolRegistered		 	MessageKey = "WARM_POOL_REGISTERED"
 	KeyShuttingDownSMAndOrch	 	MessageKey = "SHUTTING_DOWN_SM_AND_ORCH"
-
 	//		internal/sessions/:
 	KeyStartingSession			 	MessageKey = "STARTING_SESSION"
 	KeyTerminatedSession		 	MessageKey = "TERMINATED_SESSION"
+	//		internal/protocols/http/
+	KeyHTTPServerListening			MessageKey = "HTTP_SERVER_LISTENING"
+	KeyHTTPRequestCatched			MessageKey = "HTTP_REQUEST_CATCHED"
+	KeyEBPFLogReceived				MessageKey = "EBPF_LOG_RECEIVED"
+	//		internal/environments/docker/
+	KeyHackerExitCellDestroyed		MessageKey = "HACKER_EXIT_CELL_DESTROYED"
 
 
 	// Hacker trying
@@ -81,6 +102,21 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/environment/fake/client.go
 		KeyPyVFSError:					"Python VFS sunucusuna erişemedi",
 		KeyVFSOffline:					"VFS erişelemez durumda",
+		//		cmd/gateway/:
+		KeyDBFailedFallback:			"Veritabanı çöktü, sistem Log kaydına(fallback_logs.json a yazılıyor) ",
+		KeyConfigReadFailed:			"Kongigurasyon dosyası okunamadı: ",
+		//		internal/environments/docker/
+		KeyContainerCreationFailed:		"Konteyner yaratılamadı: %v",
+		KeyDockerFailedFallbackAI:		"Docker çalışmıyor (%v), Fallback 1: AI (Gemini) devrede!",
+		KeyAIFailedFallbackVFS:			"AI motoru da çöktü (%v), Fallback 2: Python VFS devrede!",
+		//		internal/protocols/http/
+		KeyHTTPServerError:				"HTTP Server Error",
+		//		pkg/telemetry/clickhouse.go
+		KeyEBPFWriteFailed:				"EBPF Log ClickHouse'a yazılamadı: %v",
+		KeyClickHouseUnreachableFallbackDisk: "ClickHouse'a ulaşılamıyor! Log diske yazılıyor hata: %v",
+		KeyLogsDirCreationFailed:		"HATA! logs klasörü oluşturulamadı: %v",
+		KeyAllLogWritesFailed:			"HATA! Veriler ClickHouse ve Diske'de yazılamadı: %v",
+		KeyHTTPWriteFailed:				"HTTP Log ClickHouse'a yazılamadı: %v",
 
 		// Bilgi
 		//		pkg/errors/:
@@ -106,6 +142,12 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/sessions/
 		KeyStartingSession:			  	"Oturum başarıyla oluşturuldu",
 		KeyTerminatedSession:		  	"Oturum başarıyla sonlandırıldı ve temizlendi",
+		//		internal/environments/docker/
+		KeyHackerExitCellDestroyed:		"Hacker cikti, hucre imha ediliyor: %s",
+		//		internal/protocols/http/
+		KeyHTTPServerListening:			"HTTP Sunucusu Dinliyor",
+		KeyHTTPRequestCatched:			"HTTP Isteği",
+		KeyEBPFLogReceived:				"eBPF Ajanından Log Geldi!",
 
 		// Hacker denemeleri
 		//		internal/protocols/ssh/:
@@ -129,6 +171,22 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/environment/fake/client.go
 		KeyPyVFSError:					"Python can't be accessed VFS Server",
 		KeyVFSOffline:					"VFS Offline ",
+		//		cmd/gateway/:
+		KeyDBFailedFallback:			"Database crashed, system is writing to fallback_logs.json ",
+		KeyConfigReadFailed:			"Failed to read configuration file: ",
+		//		internal/environments/docker/
+		KeyContainerCreationFailed:		"Failed to create container: %v",
+		KeyDockerFailedFallbackAI:		"Docker is not running (%v), Fallback 1: AI (Gemini) active!",
+		KeyAIFailedFallbackVFS:			"AI engine also crashed (%v), Fallback 2: Python VFS active!",
+		//		internal/protocols/http/
+		KeyHTTPServerError:				"HTTP Server Error",
+		//		pkg/telemetry/clickhouse.go
+		KeyEBPFWriteFailed:				"Failed to write EBPF Log to ClickHouse: %v",
+		KeyClickHouseUnreachableFallbackDisk: "ClickHouse is unreachable! Writing log to disk error: %v",
+		KeyLogsDirCreationFailed:		"ERROR! Failed to create logs directory: %v",
+		KeyAllLogWritesFailed:			"ERROR! Failed to write data to both ClickHouse and Disk: %v",
+		KeyHTTPWriteFailed:				"Failed to write HTTP Log to ClickHouse: %v",
+
 		// Information
 		//		pkg/errors/:
 		KeyErrorMessage:				"Catched System Error",
@@ -153,6 +211,13 @@ var Messages = map[Language]map[MessageKey]string{
 		//		internal/sessions
 		KeyStartingSession:			  	"Sessions successfully created",
 		KeyTerminatedSession:		  	"Session terminated and cleaned up",
+		//		internal/environments/docker/
+		KeyHackerExitCellDestroyed:		"Hacker exited, cell is being destroyed: %s",
+		//		internal/protocols/http/
+		KeyHTTPServerListening:			"HTTP Server Listening",
+		KeyHTTPRequestCatched:			"HTTP Request",
+		KeyEBPFLogReceived:				"Log Received from eBPF Agent!",
+
 
 		// Hacker Trying
 		//		internal/protocols/ssh/:

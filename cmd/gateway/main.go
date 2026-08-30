@@ -17,10 +17,10 @@ import (
 
 func main() {
 	if err := config.LoadConfig("config.yaml"); err != nil {
-		panic("Kongigurasyon dosyası okunamadı: " + err.Error())
+		panic(GetMsg(KeyConfigReadFailed) + err.Error())
 	}
 	if err := telemetry.InitClickhouse(config.AppConfig.Telemetry.ClickHouseURL, config.AppConfig.Telemetry.Password); err != nil {
-		slog.Info("Veritabanı çöktü, sistem Log kaydına(fallback_logs.json a yazılıyor) " + err.Error())
+		slog.Info(GetMsg(KeyDBFailedFallback) + err.Error())
 	}
 
 	

@@ -88,6 +88,27 @@ Servisleri Docker kullanmadan, doğrudan sanal ortam (`venv`) üzerinde çalış
    ```
 
 ---
+## 🚀 Production Deployment (Gerçek Sunucu Kurulumu)
+
+Projeyi gerçek bir bulut sunucusunda (AWS, DigitalOcean, VPS) çalıştırırken Honeypot'un maksimum verimle hackerları yakalaması ve Admin panelinizin güvende kalması için aşağıdaki adımları izleyin:
+
+### 1. Gerçek SSH Portunuzu Değiştirin
+Hackerlar her zaman `Port 22`'ye saldırır. Bu tuzağı onlara bırakmak için sunucunuzun *gerçek* SSH portunu güvenli bir porta (örneğin 50022) taşıyın.
+- `/etc/ssh/sshd_config` dosyasından `Port 22` satırını `Port 50022` yapıp SSH servisini yeniden başlatın.
+
+### 2. Ağ ve Port Yönlendirmesi (docker-compose.yml)
+Standart portları (22 ve 80) honeypot'a yönlendirin ve **Admin Panelini (3000) dışarıya kapatın**. `docker-compose.yml` içindeki portları şu şekilde güncelleyin:
+
+```yaml
+  gateway:
+    ports:
+      - "22:2222"   # Hacker trafiğini doğrudan Honeypot SSH'a yönlendir
+      - "80:8080"   # HTTP ataklarını Sahte Web Sunucusuna yönlendir
+  admin-panel:
+    ports:
+      - "127.0.0.1:3000:3000" # Paneli SADECE sunucunun kendisine (Localhost) aç!
+
+---
 
 ## 🔒 Güvenlik Notu
 Bu sistem siber güvenlik araştırmaları ve tehdit istihbaratı toplama amacıyla geliştirilmiştir. Production (canlı) ağlarda çalıştırılırken log dosyalarının disk alanını doldurmaması için log rotasyonu (log rotation) uygulanması ve izole bir ağ segmentinde (VLAN/DMZ) barındırılması tavsiye edilir.

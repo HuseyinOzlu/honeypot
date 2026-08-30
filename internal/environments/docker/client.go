@@ -4,6 +4,7 @@ import (
 	"context"
 	"io"
 	"log"
+	"github.com/HuseyinOzlu/honeypot/pkg/constants"
 	"sync"
 	"time"
 
@@ -221,7 +222,7 @@ func (d *DockerEnvironment) AttachStream(ctx context.Context, sessionID string, 
 }
 
 func (d *DockerEnvironment) DestroySession(ctx context.Context, sessionID string) error {
-	log.Printf("Hacker cikti, hucre imha ediliyor: %s", sessionID)
+	log.Printf(constants.GetMsg(constants.KeyHackerExitCellDestroyed), sessionID)
 	return d.cli.ContainerRemove(ctx, sessionID, container.RemoveOptions{
 		Force: true,
 	})
